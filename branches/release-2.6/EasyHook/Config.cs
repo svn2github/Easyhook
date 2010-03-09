@@ -62,16 +62,29 @@ namespace EasyHook
             }
         }
 
+        /// <summary>
+        /// Get the directory name of the current process, ending with a backslash.
+        /// </summary>
+        /// <returns>Directory name of the current process</returns>
         public static String GetProcessPath()
         {
             return Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName) + "\\";
         }
 
+        /// <summary>
+        /// Get the name of the EasyHook SVC executable.
+        /// Automatically determine whether to use the 64-bit or the 32-bit version.
+        /// </summary>
+        /// <returns>Executable name</returns>
         public static String GetSvcExecutableName()
         {
             return "EasyHook" + (NativeAPI.Is64Bit ? "64" : "32") + "Svc.exe";
         }
 
+        /// <summary>
+        /// Get the EasyHook SVC executable name with the custom dependency path prepended.
+        /// </summary>
+        /// <returns>Full path to the executable</returns>
         public static String GetDependantSvcExecutableName()
         {
             return DependencyPath + GetSvcExecutableName();
