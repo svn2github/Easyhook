@@ -846,7 +846,11 @@ namespace EasyHook
             }
             catch (Exception e)
             {
-                Process.GetProcessById(RemotePID).Kill();
+                try
+                {
+                    Process.GetProcessById(RemotePID).Kill();
+                }
+                catch (Exception) { }
 
                 throw e;
             }
