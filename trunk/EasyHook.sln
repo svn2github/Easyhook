@@ -15,8 +15,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagedTest", "Test\Managed
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{35DFE11F-B359-4F35-AB32-19173B9EC94D}"
 	ProjectSection(SolutionItems) = preProject
-		LICENSE = LICENSE
-		README = README
+		KNOWN ISSUES.txt = KNOWN ISSUES.txt
+		LICENSE.txt = LICENSE.txt
+		README.txt = README.txt
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{5C0188F2-57BE-4CB1-BA64-17A37106735E}"
