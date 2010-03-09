@@ -54,7 +54,7 @@ namespace EasyHook
                         // install and start service
                         NativeAPI.RtlInstallService(
                             "EasyHook" + (NativeAPI.Is64Bit?"64":"32") + "Svc",
-                            Path.GetFullPath("EasyHook" + (NativeAPI.Is64Bit?"64":"32") + "Svc.exe"),
+                            Path.GetFullPath(Config.GetDependantSvcExecutableName()),
                             ChannelName);
 
                         if (!Listening.WaitOne(5000, true))

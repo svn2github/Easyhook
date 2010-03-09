@@ -42,11 +42,11 @@ namespace EasyHook
                 if (m_Interface == null)
                 {
                     String ChannelName = RemoteHooking.GenerateName();
-                    String EasyHookDir = Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
+                    String SvcExecutablePath = (Config.DependencyPath.Length > 0 ? Config.DependencyPath : Config.GetProcessPath()) + Config.GetSvcExecutableName();
+
                     Process Proc = new Process();
                     ProcessStartInfo StartInfo = new ProcessStartInfo(
-                            EasyHookDir + (NativeAPI.Is64Bit ? "\\EasyHook32Svc.exe" : "\\EasyHook64Svc.exe"),
-                            "\"" + ChannelName + "\"");
+                            SvcExecutablePath, "\"" + ChannelName + "\"");
 
                     // create sync objects
                     EventWaitHandle Listening = new EventWaitHandle(

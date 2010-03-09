@@ -39,6 +39,44 @@ namespace EasyHook
     /// <include file='FileMonHost.xml' path='remarks'/>
     public class Config
     {
+        private static String dependencyPath = "";
+
+        /// <summary>
+        /// The path where dependant files, like EasyHook(32|64)Svc.exe are stored.
+        /// Defaults to no path being specified.
+        /// </summary>
+        public static String DependencyPath
+        {
+            get
+            {
+                if (dependencyPath.Length > 0 && !dependencyPath.EndsWith("\\"))
+                {
+                    dependencyPath += "\\";
+                }
+
+                return dependencyPath;
+            }
+            set
+            {
+                dependencyPath = value;
+            }
+        }
+
+        public static String GetProcessPath()
+        {
+            return Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName) + "\\";
+        }
+
+        public static String GetSvcExecutableName()
+        {
+            return "EasyHook" + (NativeAPI.Is64Bit ? "64" : "32") + "Svc.exe";
+        }
+
+        public static String GetDependantSvcExecutableName()
+        {
+            return DependencyPath + GetSvcExecutableName();
+        }
+
         /// <summary>
         /// REQUIRES ADMIN PRIVILEGES. Installs EasyHook and all given user NET assemblies into the GAC and
         /// ensures that all references are cleaned up if the installing application
@@ -157,7 +195,7 @@ namespace EasyHook
             InDescription = InDescription.Replace('"', '\'');
 
             Config.RunCommand(
-                "GACRemover", false, false, "EasyHook32Svc.exe", Process.GetCurrentProcess().Id.ToString() + " \"" +
+                "GACRemover", false, false, Config.GetDependantSvcExecutableName(), Process.GetCurrentProcess().Id.ToString() + " \"" +
                     Convert.ToBase64String(IdentData) + "\" \"" + InDescription + "\"" + RemovalList);
 
             // install assemblies
