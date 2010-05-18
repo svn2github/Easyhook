@@ -69,7 +69,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Aux_ulib_x86.lib GS_x86.lib psapi.lib"
+				AdditionalDependencies="Aux_ulib_x86.lib GS_x86.lib psapi.lib MSCorEE.lib"
 				OutputFile="$(OutDir)\EasyHook32.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
@@ -488,6 +488,10 @@
 				Name="RemoteHook"
 				>
 				<File
+					RelativePath=".\clrutil.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\RemoteHook\driver.cpp"
 					>
 				</File>
@@ -752,6 +756,30 @@
 					</FileConfiguration>
 				</File>
 			</Filter>
+			<Filter
+				Name="CLR Load Manager"
+				>
+				<File
+					RelativePath=".\CLR Load Manager\AssemblyInfo.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\AssemblyManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\AssemblyStore.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\CLRAssemblyReferenceList.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\HostControl.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -778,6 +806,34 @@
 				RelativePath=".\stdafx.h"
 				>
 			</File>
+			<Filter
+				Name="CLR Load Manager"
+				>
+				<File
+					RelativePath=".\CLR Load Manager\AssemblyInfo.h"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\AssemblyManager.h"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\AssemblyStore.h"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\CLRAssemblyReferenceList.h"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\CLRstdafx.h"
+					>
+				</File>
+				<File
+					RelativePath=".\CLR Load Manager\HostControl.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
