@@ -21,19 +21,19 @@
     about the project and latest updates.
 */
 
-#include <fstream>
+#include <Shlwapi.h>
 #include "AssemblyStore.h"
 
 AssemblyStore::AssemblyStore()
 {
 	m_cRef = 0;
-  m_pAssemblies = NULL;
+    m_pAssemblies = NULL;
 }
 
 AssemblyStore::AssemblyStore(list<AssemblyInfo>* assemblies)
 {
 	m_cRef=0;
-  m_pAssemblies = assemblies;
+    m_pAssemblies = assemblies;
 	assert(m_pAssemblies);
 }
 
@@ -52,27 +52,30 @@ HRESULT STDMETHODCALLTYPE AssemblyStore::ProvideAssembly(
 								IStream          **ppStmPDB)
 {
 	assert(m_pAssemblies);
-	// We don't use pContext for any host-specific data - set it to 0.
-	*pContext    = 0;
-
-    UINT64 id = 0;
+	
+	*pContext = 0;   // We don't use pContext for any host-specific data - set it to 0.
+    UINT64 id = 0;   // Will be assigned to pAssemblyId
     for(list<AssemblyInfo>::iterator assembly = m_pAssemblies->begin(); assembly != m_pAssemblies->end(); ++assembly)
     {
       ++id;
-      if (0 != lstrcmpi(assembly->FullName, pBindInfo->lpPostPolicyIdentity))
+      if (!IsSameAssembly(assembly->FullName, pBindInfo->lpPostPolicyIdentity))
           continue;
-      // Assigning pAssemblyId enables the CLR to increase performance by preventing multiple loads of the same assembly.
-      // If multiple calls to ProvideAssembly result in the same number being returned in *pAssemblyId, the CLR assumes the assemblies
-      // are the same and reuses the bytes and data structures it already has instead of mapping the contents of the stream again.
-      // The CLR treats the unique number assigned by the host as an opaque identity and never interprets the number in any way.
+      if (NULL == assembly->AssemblyLoadPath)
+          return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);  // Unable to load the assembly without a known location.
+      HRESULT hr = ReadFileToStream(assembly->AssemblyLoadPath, *ppStmAssemblyImage);
+      if (S_OK != hr)
+        return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);    // Failed to create an IStream for the assembly.
+      if (NULL != assembly->AssemblyDebugInfoPath)
+        hr = ReadFileToStream(assembly->AssemblyDebugInfoPath, *ppStmPDB);
+      if (S_OK != hr)
+        *ppStmPDB = NULL;                                   // Failed to create an IStream for the assembly's debug info.
+      /**
+        Assigning pAssemblyId enables the CLR to increase performance by preventing multiple loads of the same assembly.
+        If multiple calls to ProvideAssembly result in the same number being returned in *pAssemblyId, the CLR assumes the assemblies
+        are the same and reuses the bytes and data structures it already has instead of mapping the contents of the stream again.
+        The CLR treats the unique number assigned by the host as an opaque identity and never interprets the number in any way.
+      */
       *pAssemblyId = id;
-      HRESULT hr = LoadFile((LPCWSTR)*assembly->AssemblyLoadPath, *ppStmAssemblyImage);
-      if (S_OK != hr)
-        return hr;
-      if (*assembly->AssemblyDebugInfoPath != NULL)
-        hr = LoadFile((LPCWSTR)*assembly->AssemblyDebugInfoPath, *ppStmPDB);
-      if (S_OK != hr)
-        *ppStmPDB = NULL;
       return S_OK;
     }
     return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);  // Force CLR to fall back to it's default load manager
@@ -85,17 +88,26 @@ HRESULT STDMETHODCALLTYPE AssemblyStore::ProvideModule(
 								IStream        **ppStmModuleImage,
 								IStream        **ppStmPDB)
 {
-    // Providing assembly modules is not supported.
+    /**
+      Providing assembly modules is not supported.
+      Probably, for assembly modules, an IStream can be acquired by using IStorage.
+    */
     return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);  // Force CLR to fall back to it's default load manager
 }
 
-HRESULT AssemblyStore::LoadFile(LPCWSTR fileName, IStream* pResult) 
+HRESULT AssemblyStore::ReadFileToStream(LPCWSTR fileName, IStream* pStream) 
 {
-    IStorage *storage = NULL;
-	HRESULT hr = StgOpenStorageEx((const WCHAR*)&fileName, STGM_READ, STGFMT_FILE, 0, NULL, 0, IID_IStorage, (void**)&storage);
-	if (S_OK == hr)
-      hr = storage->CreateStream(NULL, NULL, STGM_READ, 0, &pResult);
+    HRESULT hr = SHCreateStreamOnFileEx
+                    (fileName,
+                     STGM_READ | STGM_SHARE_DENY_WRITE | STGM_FAILIFTHERE,
+                     0, FALSE, NULL,
+                     &pStream);
     return hr;
+}
+
+BOOL AssemblyStore::IsSameAssembly(LPCWSTR assemblyName, LPCWSTR otherAssemblyName)
+{
+    return (0 == lstrcmpi(assemblyName, otherAssemblyName));
 }
 
 //
@@ -116,7 +128,8 @@ ULONG STDMETHODCALLTYPE AssemblyStore::AddRef()
 
 ULONG STDMETHODCALLTYPE AssemblyStore::Release()
 {
-	if(0 == InterlockedDecrement(&m_cRef)){
+	if(0 == InterlockedDecrement(&m_cRef))
+    {
 		delete this;
 		return 0;
 	}

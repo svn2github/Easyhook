@@ -20,6 +20,7 @@
     Please visit http://www.codeplex.com/easyhook for more information
     about the project and latest updates.
 */
+
 #include "stdafx.h"
 
 BYTE* GetInjectionPtr();
@@ -514,6 +515,8 @@ EASYHOOK_NT_EXPORT RhCreateAndInject(
 		ULONG InInjectionOptions,
 		WCHAR* InLibraryPath_x86,
 		WCHAR* InLibraryPath_x64,
+        RhAssemblyInfo* SharedAssemblies,
+        ULONG   SharedAssembliesSize,
 		PVOID InPassThruBuffer,
         ULONG InPassThruSize,
         ULONG* OutProcessId)
@@ -613,6 +616,8 @@ Parameters:
 		    InInjectionOptions,
 		    InLibraryPath_x86,
 		    InLibraryPath_x64,
+            SharedAssemblies,
+            SharedAssembliesSize,
 		    InPassThruBuffer,
             InPassThruSize));
 
@@ -639,16 +644,14 @@ FINALLY_OUTRO:
     #pragma optimize ("", on)
 #endif
 
-
-
-
-
 EASYHOOK_NT_EXPORT RhInjectLibrary(
 		ULONG InTargetPID,
 		ULONG InWakeUpTID,
 		ULONG InInjectionOptions,
 		WCHAR* InLibraryPath_x86,
 		WCHAR* InLibraryPath_x64,
+        RhAssemblyInfo* SharedAssemblies,
+        ULONG   SharedAssembliesCount,
 		PVOID InPassThruBuffer,
         ULONG InPassThruSize)
 {
@@ -737,6 +740,7 @@ Returns:
     
 
 */
+
 	HANDLE					hProc = NULL;
 	HANDLE					hRemoteThread = NULL;
 	HANDLE					hSignal = NULL;
@@ -755,6 +759,8 @@ Returns:
     ULONG                   PATHSize;
     ULONG                   EasyHookPathSize;
     ULONG                   EasyHookEntrySize;
+    ULONG                   SharedAssembliesSize;
+    ULONG                   SharedAssembliesIndex;
     ULONG                   Code;
 
     SIZE_T                  BytesWritten;
@@ -834,14 +840,23 @@ Returns:
 	// allocate remote information block
     EasyHookPathSize = (RtlUnicodeLength(EasyHookPath) + 1) * 2;
     EasyHookEntrySize = (RtlAnsiLength(EasyHookEntry) + 1);
-    PATHSize = (RtlUnicodeLength(PATH) + 1 + 1) * 2;
+    PATHSize = (RtlUnicodeLength(PATH) + 1 + 1) * 2;    // Extra +1 because ';' will be added later on
     UserLibrarySize = (RtlUnicodeLength(UserLibrary) + 1 + 1) * 2;
+    SharedAssembliesSize = sizeof(RhAssemblyInfo) * SharedAssembliesCount;
+    for (SharedAssembliesIndex = 0; SharedAssembliesIndex < SharedAssembliesCount; SharedAssembliesIndex++)
+    {
+        if (NULL != SharedAssemblies[SharedAssembliesIndex].AssemblyDebugInfoPath)
+            SharedAssembliesSize += (RtlUnicodeLength(SharedAssemblies[SharedAssembliesIndex].AssemblyDebugInfoPath) + 1) * 2;
+        if (NULL != SharedAssemblies[SharedAssembliesIndex].AssemblyLoadPath)
+            SharedAssembliesSize += (RtlUnicodeLength(SharedAssemblies[SharedAssembliesIndex].AssemblyLoadPath) + 1) * 2;
+        if (NULL != SharedAssemblies[SharedAssembliesIndex].FullName)
+            SharedAssembliesSize += (RtlUnicodeLength(SharedAssemblies[SharedAssembliesIndex].FullName) + 1) * 2;
+    }
 
     PATH[PATHSize / 2 - 2] = ';';
     PATH[PATHSize / 2 - 1] = 0;
 
-	RemoteInfoSize = EasyHookPathSize + EasyHookEntrySize + PATHSize + InPassThruSize + UserLibrarySize;
-
+	RemoteInfoSize = EasyHookPathSize + EasyHookEntrySize + PATHSize + InPassThruSize + UserLibrarySize + SharedAssembliesSize;
 	RemoteInfoSize += sizeof(REMOTE_INFO);
 
 	if((Info = (LPREMOTE_INFO)RtlAllocateMemory(TRUE, RemoteInfoSize)) == NULL)
@@ -872,12 +887,14 @@ Returns:
 	Info->PATH = (wchar_t*)(Offset += EasyHookPathSize);
 	Info->UserData = (BYTE*)(Offset += PATHSize);
     Info->UserLibrary = (WCHAR*)(Offset += InPassThruSize);
+    Info->Assemblies = (RhAssemblyInfo*)(Offset += UserLibrarySize);
+
+	Offset += SharedAssembliesSize;
 
 	Info->Size = RemoteInfoSize;
 	Info->HostProcess = GetCurrentProcessId();
 	Info->UserDataSize = 0;
-
-	Offset += UserLibrarySize;
+    Info->AssembliesCount = SharedAssembliesCount;
 
 	if((ULONG)(Offset - ((BYTE*)Info)) > Info->Size)
         THROW(STATUS_BUFFER_OVERFLOW, L"A buffer overflow in internal memory was detected.");
@@ -886,12 +903,11 @@ Returns:
 	RtlCopyMemory(Info->PATH, PATH, PATHSize);
 	RtlCopyMemory(Info->EasyHookEntry, EasyHookEntry, EasyHookEntrySize);
     RtlCopyMemory(Info->UserLibrary, UserLibrary, UserLibrarySize);
-
-
+    if (NULL != SharedAssemblies)
+        RtlCopyMemory(Info->Assemblies, SharedAssemblies, SharedAssembliesSize);
 	if(InPassThruBuffer != NULL)
 	{
 		RtlCopyMemory(Info->UserData, InPassThruBuffer, InPassThruSize);
-
 		Info->UserDataSize = InPassThruSize;
 	}
 
@@ -903,7 +919,7 @@ Returns:
 	if((hSignal = CreateEvent(NULL, TRUE, FALSE, NULL)) == NULL)
         THROW(STATUS_INSUFFICIENT_RESOURCES, L"Unable to create event.");
 
-	// Possible resource leck: the remote handles cannt be closed here if an error occurs
+	// Possible resource leak: the remote handles cannt be closed here if an error occurs
 	if(!DuplicateHandle(GetCurrentProcess(), hSignal, hProc, &Info->hRemoteSignal, EVENT_ALL_ACCESS, FALSE, 0))
 		THROW(STATUS_INTERNAL_ERROR, L"Failed to duplicate remote event.");
 
@@ -915,8 +931,9 @@ Returns:
 	Info->EasyHookPath = (wchar_t*)(((BYTE*)Info->EasyHookPath) + Diff);
 	Info->PATH = (wchar_t*)(((BYTE*)Info->PATH) + Diff);
     Info->UserLibrary = (wchar_t*)(((BYTE*)Info->UserLibrary) + Diff);
-
-	if(Info->UserData != NULL)
+    if (NULL != Info->Assemblies)
+        Info->Assemblies = (RhAssemblyInfo*)(((BYTE*)Info->Assemblies) + Diff);
+	if(NULL != Info->UserData)
 		Info->UserData = (BYTE*)(((BYTE*)Info->UserData) + Diff);
 
 	Info->RemoteEntryPoint = RemoteInjectCode;
@@ -978,6 +995,7 @@ Returns:
 				case 2: THROW(STATUS_INTERNAL_ERROR, L"Unable to adjust target's PATH variable.");
                 case 10: THROW(STATUS_INTERNAL_ERROR, L"Unable to load 'mscoree.dll' into target process.");
 				case 11: THROW(STATUS_INTERNAL_ERROR, L"Unable to bind NET Runtime to target process.");
+                case 14: THROW(STATUS_INTERNAL_ERROR, L"Unable to bind custom Assembly Load Manager to NET Runtime.");
 				case 22: THROW(STATUS_INTERNAL_ERROR, L"Unable to signal remote event.");
 				default: THROW(STATUS_INTERNAL_ERROR, L"Unknown error in injected C++ completion routine.");
 				}

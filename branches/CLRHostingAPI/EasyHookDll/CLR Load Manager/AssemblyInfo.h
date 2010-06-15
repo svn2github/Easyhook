@@ -29,7 +29,7 @@
 class AssemblyInfo
 {
 public:
-    // The assembly name - "<assemblyName>, Version=<version>, PublicKeyToken=<token>, Culture=<culture>"
+  // The assembly name - "<assemblyName>, Version=<version>, PublicKeyToken=<token>, Culture=<culture>, ProcessorArchitecture=<architecture>"
   LPCWSTR FullName;
   // The path where the assembly should always be loaded from - eg "C:\MyFolder\EasyHook.dll"
   LPCWSTR AssemblyLoadPath;

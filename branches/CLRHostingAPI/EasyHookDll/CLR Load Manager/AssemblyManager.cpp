@@ -26,20 +26,22 @@
 AssemblyManager::AssemblyManager()
 {
 	m_cRef=0;
-	m_pAssemblies = NULL;
-	m_pAssemblyStore = NULL;
+	m_pAssemblies = new list<AssemblyInfo>();
+	m_pAssemblyStore = new AssemblyStore(m_pAssemblies);
 }
 
 AssemblyManager::AssemblyManager(list<AssemblyInfo>* assemblies)
 {
 	m_cRef=0;
-  m_pAssemblies = assemblies;
-	m_pAssemblyStore = NULL;
+    m_pAssemblies = assemblies;
+	m_pAssemblyStore = new AssemblyStore(m_pAssemblies);
 	assert(m_pAssemblies);
 }
 
 AssemblyManager::~AssemblyManager()
 {
+    if (m_pAssemblyStore)
+        delete m_pAssemblyStore;
 }
 
 
@@ -50,7 +52,12 @@ AssemblyManager::~AssemblyManager()
 HRESULT STDMETHODCALLTYPE AssemblyManager::GetNonHostStoreAssemblies( 
 										ICLRAssemblyReferenceList **ppReferenceList)
 {
-  *ppReferenceList = new CLRAssemblyReferenceList(m_pAssemblies);
+    *ppReferenceList = NULL;
+    /*
+     Returning a custom ICLRAssemblyReferenceList causes the CLR Host to malfunction
+     For more information refer to: http://www.ikriv.com/blog/?p=16
+    */
+    //*ppReferenceList = new CLRAssemblyReferenceList(m_pAssemblies);
 	return S_OK;
 }
 
@@ -58,9 +65,7 @@ HRESULT STDMETHODCALLTYPE AssemblyManager::GetNonHostStoreAssemblies(
 HRESULT STDMETHODCALLTYPE AssemblyManager::GetAssemblyStore( 
 								IHostAssemblyStore **ppAssemblyStore)
 {
-  assert(m_pAssemblies);
-	if(!m_pAssemblyStore)
-	  m_pAssemblyStore = new AssemblyStore(m_pAssemblies);
+    assert(m_pAssemblies);
 	*ppAssemblyStore = (IHostAssemblyStore *)m_pAssemblyStore;
 	return S_OK;
 }

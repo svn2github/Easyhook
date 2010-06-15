@@ -109,6 +109,7 @@ typedef struct _REMOTE_INFO_
 	WRAP_ULONG64(void* VirtualProtect); // fixed; 72
 	WRAP_ULONG64(void* ExitThread); // fixed; 80
 	WRAP_ULONG64(void* GetLastError); // fixed; 88
+    WRAP_ULONG64(RhAssemblyInfo* Assemblies); // fixed 96
 	
     BOOL            IsManaged;
 	HANDLE          hRemoteSignal; 
@@ -117,6 +118,7 @@ typedef struct _REMOTE_INFO_
 	BYTE*           UserData;
 	DWORD           UserDataSize;
     ULONG           WakeUpThreadID;
+    ULONG           AssembliesCount;
 }REMOTE_INFO, *LPREMOTE_INFO;
 
 

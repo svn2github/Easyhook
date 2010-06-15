@@ -65,7 +65,8 @@ public:
 private:
 	long m_cRef;
 	list<AssemblyInfo> *m_pAssemblies;
-  HRESULT LoadFile(LPCWSTR fileName, IStream* pResult);
+    HRESULT ReadFileToStream(LPCWSTR fileName, IStream* pStream);
+    BOOL IsSameAssembly(LPCWSTR assemblyName, LPCWSTR otherAssemblyName);
 };
 
 #endif

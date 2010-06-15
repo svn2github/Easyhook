@@ -32,15 +32,15 @@ HostControl::HostControl()
 HostControl::HostControl(IHostAssemblyManager *pHostAssemblyManager)
 {
 	m_pHostAssemblyManager = pHostAssemblyManager;
-  assert(m_pHostAssemblyManager);
+    assert(m_pHostAssemblyManager);
 	if (m_pHostAssemblyManager)
-    m_pHostAssemblyManager->AddRef();
+        m_pHostAssemblyManager->AddRef();
 }
 
 HostControl::~HostControl()
 {
 	if (m_pHostAssemblyManager)
-    m_pHostAssemblyManager->Release();
+        m_pHostAssemblyManager->Release();
 }
 
 //

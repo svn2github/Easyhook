@@ -53,7 +53,7 @@ HRESULT CLRAssemblyReferenceList::IsAssemblyReferenceInList(IUnknown *pName)
   assert(hr);
   for(list<AssemblyInfo>::iterator assembly = m_pAssemblies->begin(); assembly != m_pAssemblies->end(); ++assembly)
   {
-    if (0== lstrcmpi(assembly->FullName, displayName))
+    if (0 == lstrcmpi(assembly->FullName, displayName))
       return S_FALSE;
   }
   return S_OK;
