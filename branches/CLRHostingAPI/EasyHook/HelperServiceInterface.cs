@@ -40,6 +40,7 @@ namespace EasyHook
                 Int32 InNativeOptions,
                 String InLibraryPath_x86,
                 String InLibraryPath_x64,
+                RhAssemblyInfo[] Assemblies,
                 Boolean InCanBypassWOW64,
                 Boolean InCanCreateService,
                 params Object[] InPassThruArgs)
@@ -51,6 +52,7 @@ namespace EasyHook
                 InNativeOptions,
                 InLibraryPath_x86, 
                 InLibraryPath_x64, 
+                Assemblies,
                 InCanBypassWOW64,
                 InCanCreateService,
                 InPassThruArgs);

@@ -441,6 +441,7 @@ namespace EasyHook
             InjectionOptions InOptions,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
             params Object[] InPassThruArgs)
         {
             InjectEx(
@@ -450,6 +451,7 @@ namespace EasyHook
                 0,
                 InLibraryPath_x86,
                 InLibraryPath_x64,
+                Assemblies,
                 ((InOptions & InjectionOptions.NoWOW64Bypass) == 0),
                 ((InOptions & InjectionOptions.NoService) == 0),
                 InPassThruArgs);
@@ -477,6 +479,7 @@ namespace EasyHook
             Int32 InTargetPID,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
             params Object[] InPassThruArgs)
         {
             InjectEx(
@@ -485,7 +488,8 @@ namespace EasyHook
                 0,
                 0x20000000,
                 InLibraryPath_x86, 
-                InLibraryPath_x64, 
+                InLibraryPath_x64,
+                Assemblies,
                 true,
                 true,
                 InPassThruArgs);
@@ -547,6 +551,7 @@ namespace EasyHook
             Int32 InNativeOptions,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
             Boolean InCanBypassWOW64,
             Boolean InCanCreateService,
             params Object[] InPassThruArgs)
@@ -581,6 +586,7 @@ namespace EasyHook
                             NativeAPI.EASYHOOK_INJECT_MANAGED | InNativeOptions,
                             typeof(Config).Assembly.Location,
                             typeof(Config).Assembly.Location,
+                            Assemblies,
                             hPassThru.AddrOfPinnedObject(),
                             (int)PassThru.Length))
                     {
@@ -595,6 +601,7 @@ namespace EasyHook
                                         InNativeOptions,
                                         InLibraryPath_x86,
                                         InLibraryPath_x64,
+                                        Assemblies,
                                         InPassThruArgs);
                                 else
                                     throw new AccessViolationException("Unable to inject library into target process.");
@@ -612,6 +619,7 @@ namespace EasyHook
                                         InNativeOptions,
                                         InLibraryPath_x86,
                                         InLibraryPath_x64,
+                                        Assemblies,
                                         InPassThruArgs);
                                 else
                                     NativeAPI.Force(NtStatus);
@@ -812,6 +820,7 @@ namespace EasyHook
             Int32 InProcessCreationFlags,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
             out Int32 OutProcessId,
             params Object[] InPassThruArgs)
         {
@@ -838,6 +847,7 @@ namespace EasyHook
                     0x20000000, 
                     InLibraryPath_x86,
                     InLibraryPath_x64,
+                    Assemblies,
                     true,
                     false,
                     InPassThruArgs);

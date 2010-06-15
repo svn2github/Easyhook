@@ -27,7 +27,21 @@ using System.Runtime.InteropServices;
 
 namespace EasyHook
 {
+
+
 #pragma warning disable 1591
+
+  [Serializable]
+  [StructLayout(LayoutKind.Sequential)]
+  public struct RhAssemblyInfo
+  {
+    [MarshalAs(UnmanagedType.LPWStr)]
+    public string FullName;
+    [MarshalAs(UnmanagedType.LPWStr)]
+    public string AssemblyLoadPath;
+    [MarshalAs(UnmanagedType.LPWStr)]
+    public string AssemblyDebugInfoPath;
+  }
 
     static class NativeAPI_x86
     {
@@ -151,6 +165,8 @@ namespace EasyHook
             Int32 InInjectionOptions,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
+            Int32 AssembliesCount,
             IntPtr InPassThruBuffer,
             Int32 InPassThruSize);
 
@@ -336,6 +352,8 @@ namespace EasyHook
             Int32 InInjectionOptions,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
+            Int32 AssembliesCount,
             IntPtr InPassThruBuffer,
             Int32 InPassThruSize);
 
@@ -635,28 +653,45 @@ namespace EasyHook
             Int32 InInjectionOptions,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
             IntPtr InPassThruBuffer,
             Int32 InPassThruSize)
         {
-            if (Is64Bit) return NativeAPI_x64.RhInjectLibrary(InTargetPID, InWakeUpTID, InInjectionOptions,
-                InLibraryPath_x86, InLibraryPath_x64, InPassThruBuffer, InPassThruSize);
-            else return NativeAPI_x86.RhInjectLibrary(InTargetPID, InWakeUpTID, InInjectionOptions,
-                InLibraryPath_x86, InLibraryPath_x64, InPassThruBuffer, InPassThruSize);
+          return Is64Bit
+                   ? NativeAPI_x64.RhInjectLibrary(
+                       InTargetPID, InWakeUpTID, InInjectionOptions,
+                       InLibraryPath_x86, InLibraryPath_x64,
+                       Assemblies, Assemblies != null ? Assemblies.Length : 0,
+                       InPassThruBuffer, InPassThruSize)
+                   : NativeAPI_x86.RhInjectLibrary(
+                       InTargetPID, InWakeUpTID, InInjectionOptions,
+                       InLibraryPath_x86, InLibraryPath_x64,
+                       Assemblies, Assemblies != null ? Assemblies.Length : 0,
+                       InPassThruBuffer, InPassThruSize);
         }
 
-        public static void RhInjectLibrary(
+      public static void RhInjectLibrary(
             Int32 InTargetPID,
             Int32 InWakeUpTID,
             Int32 InInjectionOptions,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            RhAssemblyInfo[] Assemblies,
             IntPtr InPassThruBuffer,
             Int32 InPassThruSize)
         {
-            if (Is64Bit) Force( NativeAPI_x64.RhInjectLibrary(InTargetPID, InWakeUpTID, InInjectionOptions,
-                InLibraryPath_x86, InLibraryPath_x64, InPassThruBuffer, InPassThruSize));
-            else Force( NativeAPI_x86.RhInjectLibrary(InTargetPID, InWakeUpTID, InInjectionOptions,
-                InLibraryPath_x86, InLibraryPath_x64, InPassThruBuffer, InPassThruSize));
+            if (Is64Bit)
+              Force( NativeAPI_x64.RhInjectLibrary(
+                InTargetPID, InWakeUpTID, InInjectionOptions,
+                InLibraryPath_x86, InLibraryPath_x64,
+                Assemblies, Assemblies.Length,
+                InPassThruBuffer, InPassThruSize));
+            else
+              Force( NativeAPI_x86.RhInjectLibrary(
+                InTargetPID, InWakeUpTID, InInjectionOptions,
+                InLibraryPath_x86, InLibraryPath_x64,
+                Assemblies, Assemblies.Length,
+                InPassThruBuffer, InPassThruSize));
         }
 
         public static void RtlCreateSuspendedProcess(
