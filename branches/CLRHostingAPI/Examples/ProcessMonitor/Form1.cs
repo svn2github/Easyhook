@@ -279,6 +279,7 @@ namespace ProcessMonitor
                         PID,
                         "ProcMonInject.dll", // 32-bit version (the same because AnyCPU)
                         "ProcMonInject.dll", // 64-bit version (the same because AnyCPU)
+						Program.GetSharedAssemblies(),
                         // the optional parameter list...
                         ChannelName);
                 }
