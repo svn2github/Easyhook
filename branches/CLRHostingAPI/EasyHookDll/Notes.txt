@@ -1,0 +1,30 @@
+
+
+The CLRHostingAPI branch is a WORK IN PROGRESS.
+
+If you'd find any solutions for any of the issues in the following list, please let me know.
+Also, if you'd find any new issues, feel free to leave a message in the issue tracker (http://easyhook.codeplex.com/workitem/17199)
+
+
+
+	Known Issues
+===============================
+
+
+Unable to use CLRAssemblyReferenceList
+-> http://www.ikriv.com/blog/?p=16
+	"if you return a non-null value from IHostAssemblyManager::GetNonHostStoreAssemblies,
+	 then ICLRRuntimeHost::ExecuteInDefaultAppDomain returns error code 0×80131051 or FUSION_E_LOADFROM_BLOCKED,
+	 without ever consulting your assembly store, or the non-host store assemblies list."
+	
+	
+Unable to get the array of RhAssemblyInfo's from host process to target process.
+-> As a temporary workaround the CompleteManagedInjection method in entry.cpp needs to be adapted
+   so InInfo->Assemblies and InInfo->AssembliesCount is adapted to match the target application during testing.
+
+
+AssemblyStore::ProvideAssembly method
+-> .NET CLR Host seems to be unable to use the resulting IStream
+-> The IStream instances are created using the SHCreateStreamOnFileEx method
+-> Reading the assembly to memory and creating an IStream for that memory block doesn't fix the problem
+
