@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.Remoting;
 using System.Text;
 using System.IO;
@@ -52,19 +53,19 @@ namespace FileMon
 
             try
             {
-                try
-                {
-                    Config.Register(
-                        "A FileMon like demo application.",
-                        "FileMon.exe",
-                        "FileMonInject.dll");
-                }
-                catch (ApplicationException)
-                {
-                    MessageBox.Show("This is an administrative task!", "Permission denied...", MessageBoxButtons.OK);
+                //try
+                //{
+                //    Config.Register(
+                //        "A FileMon like demo application.",
+                //        "FileMon.exe",
+                //        "FileMonInject.dll");
+                //}
+                //catch (ApplicationException)
+                //{
+                //    MessageBox.Show("This is an administrative task!", "Permission denied...", MessageBoxButtons.OK);
 
-                    System.Diagnostics.Process.GetCurrentProcess().Kill();
-                }
+                //    System.Diagnostics.Process.GetCurrentProcess().Kill();
+                //}
 
                 RemoteHooking.IpcCreateServer<FileMonInterface>(ref ChannelName, WellKnownObjectMode.SingleCall);
                 
@@ -72,6 +73,7 @@ namespace FileMon
                     TargetPID,
                     "FileMonInject.dll",
                     "FileMonInject.dll",
+                    GetSharedAssemblies(),
                     ChannelName);
                 
                 Console.ReadLine();
@@ -80,6 +82,32 @@ namespace FileMon
             {
                 Console.WriteLine("There was an error while connecting to target:\r\n{0}", ExtInfo.ToString());
             }
+        }
+
+        public static RhAssemblyInfo[] GetSharedAssemblies()
+        {
+          // Example of a complete fullname is:
+          // easyhook, version=2.5.0.0, culture=neutral, publickeytoken=4b580fca19d0b0c5, processorarchitecture=msil
+          RhAssemblyInfo[] assemblies = new RhAssemblyInfo[3];
+          var name = AssemblyName.GetAssemblyName("EasyHook.dll");
+          assemblies[0] = new RhAssemblyInfo
+          {
+            FullName = name.FullName + ", ProcessorArchitecture=" + name.ProcessorArchitecture,
+            AssemblyLoadPath = name.CodeBase.Substring(@"file:\\\".Length)
+          };
+          name = AssemblyName.GetAssemblyName("FileMonInject.dll");
+          assemblies[1] = new RhAssemblyInfo
+          {
+            FullName = name.FullName + ", ProcessorArchitecture=" + name.ProcessorArchitecture,
+            AssemblyLoadPath = name.CodeBase.Substring(@"file:\\\".Length)
+          };
+          name = AssemblyName.GetAssemblyName("FileMon.exe");
+          assemblies[2] = new RhAssemblyInfo
+          {
+            FullName = name.FullName + ", ProcessorArchitecture=" + name.ProcessorArchitecture,
+            AssemblyLoadPath = name.CodeBase.Substring(@"file:\\\".Length)
+          };
+          return assemblies;
         }
     }
 }
