@@ -350,7 +350,16 @@ DRIVER_SHARED_API(NTSTATUS, LhBarrierCallStackTrace(
 		ULONG           HostPID;
 		UCHAR*          UserData;
 		ULONG           UserDataSize;
+        //RhAssemblyInfo* Assemblies;
+        //ULONG           AssembliesCount;
 	}REMOTE_ENTRY_INFO;
+
+    typedef struct _RhAssemblyInfo
+    {
+        WCHAR* FullName;
+        WCHAR* AssemblyLoadPath;
+        WCHAR* AssemblyDebugInfoPath;
+    } RhAssemblyInfo;
 
 	typedef void __stdcall REMOTE_ENTRY_POINT(REMOTE_ENTRY_INFO* InRemoteInfo);
 
@@ -370,6 +379,8 @@ DRIVER_SHARED_API(NTSTATUS, LhBarrierCallStackTrace(
 				ULONG InInjectionOptions,
 				WCHAR* InLibraryPath_x86,
 				WCHAR* InLibraryPath_x64,
+                RhAssemblyInfo* SharedAssemblies,
+                ULONG SharedAssembliesSize,
 				PVOID InPassThruBuffer,
 				ULONG InPassThruSize);
 
@@ -380,6 +391,8 @@ DRIVER_SHARED_API(NTSTATUS, LhBarrierCallStackTrace(
 				ULONG InInjectionOptions,
 				WCHAR* InLibraryPath_x86,
 				WCHAR* InLibraryPath_x64,
+                RhAssemblyInfo* SharedAssemblies,
+                ULONG   SharedAssembliesSize,
 				PVOID InPassThruBuffer,
 				ULONG InPassThruSize,
 				ULONG* OutProcessId);
