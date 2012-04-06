@@ -1,18 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyHook", "EasyHook\EasyHook.csproj", "{AB53862B-3B5C-4EFC-9787-1F01199EBFBF}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyHookDll", "EasyHookDll\EasyHookDll.vcproj", "{D087E484-DBC9-4A2E-8368-C1D0E524994D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{AB53862B-3B5C-4EFC-9787-1F01199EBFBF} = {AB53862B-3B5C-4EFC-9787-1F01199EBFBF}
-		{B9A68E47-237F-4045-A371-D5CCEB896F7F} = {B9A68E47-237F-4045-A371-D5CCEB896F7F}
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyHookSvc", "EasyHookSvc\EasyHookSvc.csproj", "{B9A68E47-237F-4045-A371-D5CCEB896F7F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagedTest", "Test\ManagedTest\ManagedTest.csproj", "{E23BE1E6-DC9D-4755-890E-443EA7B736FB}"
-EndProject
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{35DFE11F-B359-4F35-AB32-19173B9EC94D}"
 	ProjectSection(SolutionItems) = preProject
 		KNOWN ISSUES.txt = KNOWN ISSUES.txt
@@ -22,6 +10,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{5C0188F2-57BE-4CB1-BA64-17A37106735E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyHook", "EasyHook\EasyHook.csproj", "{AB53862B-3B5C-4EFC-9787-1F01199EBFBF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyHookDll", "EasyHookDll\EasyHookDll.vcxproj", "{D087E484-DBC9-4A2E-8368-C1D0E524994D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyHookSvc", "EasyHookSvc\EasyHookSvc.csproj", "{B9A68E47-237F-4045-A371-D5CCEB896F7F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagedTest", "Test\ManagedTest\ManagedTest.csproj", "{E23BE1E6-DC9D-4755-890E-443EA7B736FB}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcessMonitor", "Examples\ProcessMonitor\ProcessMonitor.csproj", "{8E795877-473B-4376-8F9C-2519464D6B18}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcMonInject", "Examples\ProcMonInject\ProcMonInject.csproj", "{64A83DDB-3B66-46C5-8CCF-7A00173F8D3F}"
@@ -30,10 +26,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileMon", "Examples\FileMon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileMonInject", "Examples\FileMonInject\FileMonInject.csproj", "{CA462E5D-8A32-42EA-9DBD-C256D22FDA21}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnmanagedHook", "Examples\UnmanagedHook\UnmanagedHook.vcproj", "{7D74973E-8B83-42D3-B2EA-795AA0076C9F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D087E484-DBC9-4A2E-8368-C1D0E524994D} = {D087E484-DBC9-4A2E-8368-C1D0E524994D}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnmanagedHook", "Examples\UnmanagedHook\UnmanagedHook.vcxproj", "{7D74973E-8B83-42D3-B2EA-795AA0076C9F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagedTarget", "Test\ManagedTarget\ManagedTarget.csproj", "{DF97D96B-DB03-44DE-8C59-DE14E1FAA2C2}"
 EndProject
