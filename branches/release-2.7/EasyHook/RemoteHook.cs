@@ -210,7 +210,7 @@ namespace EasyHook
         /// </param>
         /// <param name="RefChannelName">
         /// Either <c>null</c> to let the method generate a random channel name to be passed to 
-        /// <see cref="IpcConnectClient"/> or a predefined one. If you pass a value unequal to 
+        /// <see cref="IpcConnectClient{TRemoteObject}"/> or a predefined one. If you pass a value unequal to 
         /// <c>null</c>, you shall also specify all SIDs that are allowed to connect to your channel!
         /// </param>
         /// <param name="InAllowedClientSIDs">
