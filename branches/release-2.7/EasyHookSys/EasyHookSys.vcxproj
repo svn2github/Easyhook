@@ -87,6 +87,10 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EasyHook32Drv</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.sys</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EasyHook64Drv</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.sys</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -114,7 +118,7 @@
     <Link>
       <AdditionalOptions>/ignore:4078 /SECTION:INIT,d /FORCE:MULTIPLE /osversion:5.0 /align:0x20 /pdbcompress %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>ntoskrnl.lib;hal.lib;ntstrsafe.lib</AdditionalDependencies>
-      <OutputFile>$(OutDir)EasyHook64Drv.sys</OutputFile>
+      <OutputFile>$(TargetPath)</OutputFile>
       <Version>1.0</Version>
       <SuppressStartupBanner>false</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(WDKROOT)\lib\wnet\amd64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -164,7 +168,7 @@ $(WDKROOT)\bin\SelfSign\SignTool sign /v /s EasyHookTestCertStore /n EasyHookTes
     <Link>
       <AdditionalOptions>/ignore:4078 /SECTION:INIT,d /FORCE:MULTIPLE /osversion:5.0 /align:0x20 /pdbcompress %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>ntoskrnl.lib;hal.lib;ntstrsafe.lib</AdditionalDependencies>
-      <OutputFile>$(OutDir)EasyHook32Drv.sys</OutputFile>
+      <OutputFile>$(TargetPath)</OutputFile>
       <Version>1.0</Version>
       <SuppressStartupBanner>false</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(WDKROOT)\lib\wxp\i386;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
