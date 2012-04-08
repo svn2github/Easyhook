@@ -14,6 +14,7 @@ namespace ProcessMonitor
         [STAThread]
         static void Main()
         {
+            bool noGAC = false;
             try
             {
                 Config.Register(
@@ -23,14 +24,15 @@ namespace ProcessMonitor
             }
             catch (ApplicationException)
             {
-                MessageBox.Show("This is an administrative task!", "Permission denied...", MessageBoxButtons.OK);
+                MessageBox.Show("This is an administrative task! Attempting without GAC...", "Permission denied...", MessageBoxButtons.OK);
 
-                System.Diagnostics.Process.GetCurrentProcess().Kill();
+                noGAC = true;
+                //System.Diagnostics.Process.GetCurrentProcess().Kill();
             }
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new Form1(noGAC));
         }
     }
 }

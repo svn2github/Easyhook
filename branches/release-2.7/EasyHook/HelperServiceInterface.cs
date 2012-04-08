@@ -42,6 +42,7 @@ namespace EasyHook
                 String InLibraryPath_x64,
                 Boolean InCanBypassWOW64,
                 Boolean InCanCreateService,
+                Boolean InRequireStrongName,
                 params Object[] InPassThruArgs)
         {
             RemoteHooking.InjectEx(
@@ -53,6 +54,7 @@ namespace EasyHook
                 InLibraryPath_x64, 
                 InCanBypassWOW64,
                 InCanCreateService,
+                InRequireStrongName,
                 InPassThruArgs);
         }
 

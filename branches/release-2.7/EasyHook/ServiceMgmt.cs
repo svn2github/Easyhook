@@ -79,6 +79,7 @@ namespace EasyHook
             Int32 InNativeOptions,
             String InLibraryPath_x86,
             String InLibraryPath_x64,
+            Boolean InRequireStrongName,
             params Object[] InPassThruArgs)
         {
             Install();
@@ -92,6 +93,7 @@ namespace EasyHook
                 InLibraryPath_x64, 
                 false,
                 false,
+                InRequireStrongName,
                 InPassThruArgs);
         }
 

@@ -53,7 +53,9 @@ namespace EasyHook
         public String ChannelName;
         public Object[] UserParams;
         public String UserLibrary;
+        public String UserLibraryName;
         public Int32 HostPID;
+        public bool RequireStrongName;
     }
 
     /// <summary>
@@ -104,17 +106,22 @@ namespace EasyHook
         /// <summary>
         /// Default injection procedure.
         /// </summary>
-        Default = 0,
+        Default = 0x0,
 
         /// <summary>
         /// Use of services is not permitted.
         /// </summary>
-        NoService = 1,
+        NoService = 0x1,
 
         /// <summary>
         /// Use of WOW64 bypass is not permitted.
         /// </summary>
-        NoWOW64Bypass = 2,
+        NoWOW64Bypass = 0x2,
+
+        /// <summary>
+        /// Allow injection without a strong name (e.g. no GAC registration). This option requires that the full path to injected assembly be provided
+        /// </summary>
+        DoNotRequireStrongName = 0x4,
     }
 
     /// <summary>
@@ -225,10 +232,7 @@ namespace EasyHook
             WellKnownObjectMode InObjectMode,
             params WellKnownSidType[] InAllowedClientSIDs) where TRemoteObject : MarshalByRefObject
         {
-            String ChannelName = RefChannelName;
-
-            if (ChannelName == null)
-                ChannelName = GenerateName();
+            String ChannelName = RefChannelName ?? GenerateName();
 
             ///////////////////////////////////////////////////////////////////
             // create security descriptor for IpcChannel...
@@ -316,7 +320,7 @@ namespace EasyHook
         /// and members are always processed locally only...
         /// </typeparam>
         /// <param name="InChannelName">
-        /// The name of the channel to connect to, usually obtained with <see cref="IpcCreateServer"/>.
+        /// The name of the channel to connect to, usually obtained with <see cref="IpcCreateServer{TRemoteObject}"/>.
         /// </param>
         /// <returns>
         /// An remote object instance which member accesses will be redirected to the server.
@@ -452,6 +456,7 @@ namespace EasyHook
                 InLibraryPath_x64,
                 ((InOptions & InjectionOptions.NoWOW64Bypass) == 0),
                 ((InOptions & InjectionOptions.NoService) == 0),
+                ((InOptions & InjectionOptions.DoNotRequireStrongName) == 0),
                 InPassThruArgs);
         }
 
@@ -488,6 +493,7 @@ namespace EasyHook
                 InLibraryPath_x64, 
                 true,
                 true,
+                true,
                 InPassThruArgs);
         }
 
@@ -497,6 +503,9 @@ namespace EasyHook
             ref String InLibraryPath_x64,
             MemoryStream InPassThruStream)
         {
+            if (String.IsNullOrEmpty(InLibraryPath_x86) && String.IsNullOrEmpty(InLibraryPath_x64))
+                throw new ArgumentException("At least one library for x86 or x64 must be provided");
+
             // ensure full path information in case of file names...
             if ((InLibraryPath_x86 != null) && File.Exists(InLibraryPath_x86))
                 InLibraryPath_x86 = Path.GetFullPath(InLibraryPath_x86);
@@ -517,13 +526,15 @@ namespace EasyHook
             if (File.Exists(InRemoteInfo.UserLibrary))
             {
                 // translate to assembly name
-                InRemoteInfo.UserLibrary = AssemblyName.GetAssemblyName(InRemoteInfo.UserLibrary).FullName;
+                InRemoteInfo.UserLibraryName = AssemblyName.GetAssemblyName(InRemoteInfo.UserLibrary).FullName;
             }
 
-            if ((UserAsm = Assembly.ReflectionOnlyLoad(InRemoteInfo.UserLibrary)) == null)
+            // Attempt to load the library by its FullName and if that fails, by its original library filename
+            if ((UserAsm = Assembly.ReflectionOnlyLoad(InRemoteInfo.UserLibraryName)) == null && (UserAsm = Assembly.ReflectionOnlyLoadFrom(InRemoteInfo.UserLibrary)) == null)
                 throw new DllNotFoundException("The given assembly could not be found.");
 
-            if ((Int32)(UserAsm.GetName().Flags & AssemblyNameFlags.PublicKey) == 0)
+            // Check for a strong name if necessary
+            if (InRemoteInfo.RequireStrongName && (Int32)(UserAsm.GetName().Flags & AssemblyNameFlags.PublicKey) == 0)
                 throw new ArgumentException("The given assembly has no strong name.");
 
             /*
@@ -549,20 +560,18 @@ namespace EasyHook
             String InLibraryPath_x64,
             Boolean InCanBypassWOW64,
             Boolean InCanCreateService,
+            Boolean InRequireStrongName,
             params Object[] InPassThruArgs)
         {
             MemoryStream PassThru = new MemoryStream();
-            ManagedRemoteInfo RemoteInfo = new ManagedRemoteInfo();
-            BinaryFormatter Format = new BinaryFormatter();
-            Int32 NtStatus;
 
             HelperServiceInterface.BeginInjection(InTargetPID);
-
             try
             {
-                RemoteInfo = new ManagedRemoteInfo();
+                ManagedRemoteInfo RemoteInfo = new ManagedRemoteInfo();
                 RemoteInfo.HostPID = InHostPID;
                 RemoteInfo.UserParams = InPassThruArgs;
+				RemoteInfo.RequireStrongName = InRequireStrongName;
 
                 GCHandle hPassThru = PrepareInjection(
                     RemoteInfo,
@@ -575,6 +584,7 @@ namespace EasyHook
                  */
                 try
                 {
+                    Int32 NtStatus;
                     switch (NtStatus = NativeAPI.RhInjectLibraryEx(
                             InTargetPID,
                             InWakeUpTID,
@@ -595,6 +605,7 @@ namespace EasyHook
                                         InNativeOptions,
                                         InLibraryPath_x86,
                                         InLibraryPath_x64,
+                                        InRequireStrongName,
                                         InPassThruArgs);
                                 else
                                     throw new AccessViolationException("Unable to inject library into target process.");
@@ -612,6 +623,7 @@ namespace EasyHook
                                         InNativeOptions,
                                         InLibraryPath_x86,
                                         InLibraryPath_x64,
+                                        InRequireStrongName,
                                         InPassThruArgs);
                                 else
                                     NativeAPI.Force(NtStatus);
@@ -817,8 +829,6 @@ namespace EasyHook
         {
             Int32 RemotePID;
             Int32 RemoteTID;
-            MemoryStream PassThru = new MemoryStream();
-            ManagedRemoteInfo RemoteInfo = new ManagedRemoteInfo();
 
             // create suspended process...
             NativeAPI.RtlCreateSuspendedProcess(
@@ -827,7 +837,6 @@ namespace EasyHook
                 InProcessCreationFlags,
                 out RemotePID,
                 out RemoteTID);
-
 
             try
             {
@@ -840,6 +849,7 @@ namespace EasyHook
                     InLibraryPath_x64,
                     true,
                     false,
+                    true, // TODO: allow requiring a Strong Name to be an option
                     InPassThruArgs);
 
                 OutProcessId = RemotePID;

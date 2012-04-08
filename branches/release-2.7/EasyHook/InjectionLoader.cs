@@ -56,6 +56,31 @@ namespace EasyHook
             LocalHook.Release();
         }
 
+        /// <summary>
+        /// When not using the GAC, the BinaryFormatter fails to recognise the InParam
+        /// when attempting to deserialise. 
+        /// 
+        /// A custom DeserializationBinder works around this (see http://spazzarama.com/2009/06/25/binary-deserialize-unable-to-find-assembly/)
+        /// </summary>
+        private sealed class AllowAllAssemblyVersionsDeserializationBinder :
+            System.Runtime.Serialization.SerializationBinder
+        {
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                Type typeToDeserialize = null;
+
+                String currentAssembly = Assembly.GetExecutingAssembly().FullName;
+
+                // In this case we are always using the current assembly
+                assemblyName = currentAssembly;
+
+                // Get the type using the typeName and assemblyName
+                typeToDeserialize = Type.GetType(String.Format("{0}, {1}", typeName, assemblyName));
+
+                return typeToDeserialize;
+            }
+        }
+
         #pragma warning disable 0028
         public static int Main(String InParam)
         {
@@ -83,6 +108,9 @@ namespace EasyHook
                 MemoryStream PassThruStream = new MemoryStream();
                 BinaryFormatter Format = new BinaryFormatter();
 
+                // Workaround for deserialization when not using GAC registration
+                Format.Binder = new AllowAllAssemblyVersionsDeserializationBinder();
+ 
                 Marshal.Copy(UnmanagedInfo.UserData, PassThruBytes, 0, UnmanagedInfo.UserDataSize);
               
                 PassThruStream.Write(PassThruBytes, 0, PassThruBytes.Length);
@@ -125,7 +153,6 @@ namespace EasyHook
                     ParamArray[i + 1] = RemoteInfo.UserParams[i];
                 }
 
-
                 /*
                  * After this we are ready to load the user supplied library.
                  */
@@ -133,8 +160,41 @@ namespace EasyHook
 
                 try
                 {
-                    UserAssembly = Assembly.LoadWithPartialName(RemoteInfo.UserLibrary);
+                    // First attempt to load the library using its full name (e.g. strong name)
+                    if (!String.IsNullOrEmpty(RemoteInfo.UserLibraryName))
+                    {
+                        try
+                        {
+                            UserAssembly = Assembly.Load(RemoteInfo.UserLibraryName);
+                            Config.PrintComment("SUCCESS: Assembly.Load({0})", RemoteInfo.UserLibraryName);
+                        }
+                        catch (Exception e)
+                        {
+                            Config.PrintWarning("FAIL: Assembly.Load({0}) - {1}", RemoteInfo.UserLibraryName, e.ToString());
+                        }
+                    }
 
+                    // If loading by strong name failed, attempt to load the assembly from its file location
+                    if (UserAssembly == null)
+                    {
+                        try
+                        {
+                            UserAssembly = Assembly.LoadFrom(RemoteInfo.UserLibrary);
+                            Config.PrintComment("SUCCESS: Assembly.LoadFrom({0})", RemoteInfo.UserLibrary);
+                        }
+                        catch (Exception e)
+                        {
+                            Config.PrintWarning("FAIL: Assembly.LoadFrom({0}) - {1}", RemoteInfo.UserLibrary,
+                                                e.ToString());
+                        }
+                    }
+
+                    if (UserAssembly == null)
+                    {
+                        Config.PrintError("Could not load assembly {0}, {1}", RemoteInfo.UserLibrary, RemoteInfo.UserLibraryName);
+                        return 0;
+                    }
+                    
                     // search for user library entry point...
                     Type[] ExportedTypes = UserAssembly.GetExportedTypes();
 
@@ -159,9 +219,17 @@ namespace EasyHook
                         if (ParamArray.Length != Run.GetParameters().Length)
                             throw new MissingMethodException("The given user library does export a Run() method in the 'EasyHook.IEntryPoint' interface, but the parameter count does not match!");
 
-                        for(int i = 0; i < ParamArray.Length; i++){
-                            if (!Run.GetParameters()[i].ParameterType.IsInstanceOfType(ParamArray[i]))
-                                throw new MissingMethodException("The given user library does export a Run() method in the 'EasyHook.IEntryPoint' interface, but the parameter types do not match!");
+                        for(int i = 0; i < ParamArray.Length; i++)
+                        {
+                            var param = Run.GetParameters()[i];
+                            if (param.ParameterType.IsByRef && ParamArray[i] == null) // allow null parameter values
+                                continue;
+                            if (!param.ParameterType.IsInstanceOfType(ParamArray[i]))
+                            {
+                                Config.PrintError("Run() parameter {0} type {1}, does not match input parameter type {2}", i, param.ParameterType.AssemblyQualifiedName, ParamArray[i].GetType().AssemblyQualifiedName);
+                                throw new MissingMethodException(
+                                    "The given user library does export a Run() method in the 'EasyHook.IEntryPoint' interface, but the parameter types do not match!");
+                            }
                         }
                     } else
                         throw new MissingMethodException("The given user library does not export a proper Run() method in the 'EasyHook.IEntryPoint' interface.");

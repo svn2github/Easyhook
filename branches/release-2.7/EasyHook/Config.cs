@@ -265,14 +265,22 @@ namespace EasyHook
 
             try
             {
-                if (EventLog.Exists("Application", "."))
+                try
                 {
-                    EventLog Log = new EventLog("Application", ".", "EasyHook");
-
+                    // Attempt to create the Event Source
+                    if (!EventLog.SourceExists("EasyHook"))
+                    {
+                        EventLog.CreateEventSource("EasyHook", "Application");
+                    }
+                }
+                catch
+                {
+                }
+                {
 #if !DEBUG
                 if(InType == EventLogEntryType.Error)
 #endif
-                    Log.WriteEntry(Entry, InType);
+                    EventLog.WriteEntry("EasyHook", Entry, InType);
                 }
             }
             catch

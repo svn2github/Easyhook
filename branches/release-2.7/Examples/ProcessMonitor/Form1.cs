@@ -49,8 +49,10 @@ namespace ProcessMonitor
         static internal Queue<MonitorEntry> MonitorQueue = new Queue<MonitorEntry>();
         static internal Boolean IsMonitoring = true;
 
-        public Form1()
+        static bool _noGAC = false;
+        public Form1(bool noGAC)
         {
+            _noGAC = noGAC;
             InitializeComponent();
 
             ProcessTimer = new System.Threading.Timer(new System.Threading.TimerCallback(OnProcessUpdate), null, 0, 5000);
@@ -79,7 +81,15 @@ namespace ProcessMonitor
 
             try
             {
-                ProcessInfo[] Array = (ProcessInfo[])RemoteHooking.ExecuteAsService<Form1>("EnumProcesses");
+                ProcessInfo[] Array;
+                if (_noGAC)
+                {
+                    Array = EnumProcesses();
+                }
+                else
+                {
+                    Array = (ProcessInfo[])RemoteHooking.ExecuteAsService<Form1>("EnumProcesses");
+                }
                 SortedDictionary<String, ProcessInfo> Result = new SortedDictionary<string, ProcessInfo>();
 
                 // sort by name...
@@ -277,8 +287,9 @@ namespace ProcessMonitor
 
                     RemoteHooking.Inject(
                         PID,
-                        "ProcMonInject.dll", // 32-bit version (the same because AnyCPU)
-                        "ProcMonInject.dll", // 64-bit version (the same because AnyCPU)
+                        (_noGAC ? InjectionOptions.DoNotRequireStrongName : InjectionOptions.Default), // if not using GAC allow assembly without strong name
+                        System.IO.Path.Combine(System.IO.Path.GetDirectoryName(typeof(DemoInterface).Assembly.Location), "ProcMonInject.dll"), // 32-bit version (the same because AnyCPU)
+                        System.IO.Path.Combine(System.IO.Path.GetDirectoryName(typeof(DemoInterface).Assembly.Location), "ProcMonInject.dll"), //"ProcMonInject.dll", // 64-bit version (the same because AnyCPU)
                         // the optional parameter list...
                         ChannelName);
                 }
