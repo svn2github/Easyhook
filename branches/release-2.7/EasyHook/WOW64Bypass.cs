@@ -42,7 +42,7 @@ namespace EasyHook
                 if (m_Interface == null)
                 {
                     String ChannelName = RemoteHooking.GenerateName();
-                    String SvcExecutablePath = (Config.DependencyPath.Length > 0 ? Config.DependencyPath : Config.GetProcessPath()) + Config.GetSvcExecutableName();
+                    String SvcExecutablePath = (Config.DependencyPath.Length > 0 ? Config.DependencyPath : Config.GetProcessPath()) + Config.GetWOW64BypassExecutableName();
 
                     Process Proc = new Process();
                     ProcessStartInfo StartInfo = new ProcessStartInfo(

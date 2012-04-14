@@ -61,24 +61,20 @@ namespace EasyHookSvc
                 }
 
                 // remove assemblies from GAC...
-                IntPtr GacContext = NativeAPI.GacCreateContext();
-
                 try
                 {
+                    List<string> assemblies = new List<string>();
                     for (int i = 3; i < args.Length; i++)
                     {
-                        NativeAPI.GacUninstallAssembly(GacContext, args[i], args[2], args[1]);
+                        assemblies.Add(args[i]);
                     }
+
+                    NativeAPI.GacUninstallAssemblies(assemblies.ToArray(), args[2], args[1]);
                 }
                 catch (Exception Info)
                 {
                     Config.PrintError("Unable to cleanup GAC...\r\n" + Info.ToString());
                 }
-                finally
-                {
-                    NativeAPI.GacReleaseContext(ref GacContext);
-                }
-
             }
             else if (args.Length == 1)
             {

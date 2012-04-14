@@ -727,42 +727,44 @@ namespace EasyHook
             else return NativeAPI_x86.RhIsX64System();
         }
 
-
-        public static IntPtr GacCreateContext() {
-            if (Is64Bit) return NativeAPI_x64.GacCreateContext();
-            else return NativeAPI_x86.GacCreateContext();
-        }
-
-        public static void GacReleaseContext(ref IntPtr RefContext)
-        {
-            if (Is64Bit) NativeAPI_x64.GacReleaseContext(ref RefContext);
-            else NativeAPI_x86.GacReleaseContext(ref RefContext);
-        }
-
-        public static void GacInstallAssembly(
-            IntPtr InContext,
-            String InAssemblyPath,
+        public static void GacInstallAssemblies(
+            String[] InAssemblyPaths,
             String InDescription,
             String InUniqueID)
         {
-            Boolean Res;
-            if (Is64Bit) Res = NativeAPI_x64.GacInstallAssembly(InContext, InAssemblyPath, InDescription, InUniqueID);
-            else Res =  NativeAPI_x86.GacInstallAssembly(InContext, InAssemblyPath, InDescription, InUniqueID);
-            if(!Res)
-                throw new ApplicationException("Unable to install assembly in the GAC. This usually indicates either an invalid assembly path or you are not admin.");
+            try
+            {
+                System.GACManagedAccess.AssemblyCache.InstallAssemblies(
+                    InAssemblyPaths,
+                    new System.GACManagedAccess.InstallReference(System.GACManagedAccess.InstallReferenceGuid.OpaqueGuid, InUniqueID, InDescription),
+                    System.GACManagedAccess.AssemblyCommitFlags.Force);
+            }
+            catch (Exception e)
+            {
+                throw new ApplicationException("Unable to install assemblies to GAC, see inner exception for details", e);
+            }
         }
 
-        public static void GacUninstallAssembly(
-            IntPtr InContext,
-            String InAssemblyName,
+        public static void GacUninstallAssemblies(
+            String[] InAssemblyNames,
             String InDescription,
             String InUniqueID)
         {
-            Boolean Res;
-            if (Is64Bit) Res = NativeAPI_x64.GacUninstallAssembly(InContext, InAssemblyName, InDescription, InUniqueID);
-            else Res = NativeAPI_x86.GacUninstallAssembly(InContext, InAssemblyName, InDescription, InUniqueID);
-            if (!Res)
-                throw new ApplicationException("Unable to install assembly in the GAC. This usually indicates either an invalid assembly path or you are not admin.");
+            try
+            {
+                System.GACManagedAccess.AssemblyCacheUninstallDisposition[] results;
+                System.GACManagedAccess.AssemblyCache.UninstallAssemblies(
+                    InAssemblyNames,
+                    new System.GACManagedAccess.InstallReference(System.GACManagedAccess.InstallReferenceGuid.OpaqueGuid, InUniqueID, InDescription),
+                    out results);
+
+                for (var i = 0; i < InAssemblyNames.Length; i++)
+                    Config.PrintComment("GacUninstallAssembly: Assembly {0}, uninstall result {1}", InAssemblyNames[i], results[i]);
+            }
+            catch (Exception e)
+            {
+                throw new ApplicationException("Unable to uninstall assemblies from GAC, see inner exception for details", e);
+            }
         }
     }
 }

@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Domain\DomainIdentifier.cs" />
+    <Compile Include="GACWrap.cs" />
     <Compile Include="IPC\-DummyCore.cs" />
     <Compile Include="IPC\ChannelProperties.cs" />
     <Compile Include="IPC\ConnectionManager.cs" />

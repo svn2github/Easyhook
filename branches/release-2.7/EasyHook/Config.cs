@@ -82,6 +82,16 @@ namespace EasyHook
         }
 
         /// <summary>
+        /// Get the name of the EasyHook SVC executable to use for WOW64 bypass.
+        /// If this process is 64-bit, return the 32-bit service executable and vice versa.
+        /// </summary>
+        /// <returns></returns>
+        public static String GetWOW64BypassExecutableName()
+        {
+            return "EasyHook" + (NativeAPI.Is64Bit ? "32" : "64") + "Svc.exe";
+        }
+
+        /// <summary>
         /// Get the EasyHook SVC executable name with the custom dependency path prepended.
         /// </summary>
         /// <returns>Full path to the executable</returns>
@@ -212,23 +222,11 @@ namespace EasyHook
                     Convert.ToBase64String(IdentData) + "\" \"" + InDescription + "\"" + RemovalList);
 
             // install assemblies
-            IntPtr GacContext = NativeAPI.GacCreateContext();
+            NativeAPI.GacInstallAssemblies(
+                    InstallList.ToArray(),
+                    InDescription,
+                    Convert.ToBase64String(IdentData));
 
-            try
-            {
-                foreach (String Assembly in InstallList)
-                {
-                    NativeAPI.GacInstallAssembly(
-                        GacContext,
-                        Assembly,
-                        InDescription,
-                        Convert.ToBase64String(IdentData));
-                }
-            }
-            finally
-            {
-                NativeAPI.GacReleaseContext(ref GacContext);
-            }
         }
 
 #pragma warning disable 1591
