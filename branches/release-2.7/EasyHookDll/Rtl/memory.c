@@ -91,6 +91,7 @@ BOOL RtlMoveMemory(
     RtlCopyMemory(Buffer, InSource, InByteCount);
     RtlCopyMemory(InDest, Buffer, InByteCount);
 
+    RtlFreeMemory(Buffer);
     return TRUE;
 }
 

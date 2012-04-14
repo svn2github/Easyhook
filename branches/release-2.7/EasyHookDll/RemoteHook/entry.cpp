@@ -328,8 +328,6 @@ Description:
     else
         ErrorCode = CompleteUnmanagedInjection(InInfo);
 
-    return ErrorCode;
-
 ABORT_ERROR:
 
     // release resources
