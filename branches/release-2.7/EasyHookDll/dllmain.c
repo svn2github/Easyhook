@@ -79,6 +79,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             // free tls slot
             TlsFree(RhTlsIndex);
 
+            if (lpReserved != NULL) // if lpReserved != NULL then LhWaitForPendingRemovals COULD cause an endless loop
+                break;
+
             // remove all hooks and shutdown thread barrier...
 			LhCriticalFinalize();
 
