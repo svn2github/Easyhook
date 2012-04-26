@@ -110,10 +110,19 @@
           DestinationFolder="$(PackageDir)\NetFX4.0" />
   </Target>
 
+  <Target Name="ExportSource">
+    <RemoveDir Directories="$(PackageDir)\Source" />
+    <SvnExport RepositoryPath="$(MSBuildProjectDirectory)"
+               LocalPath="$(PackageDir)\Source"></SvnExport>
+  </Target>
+
   <!-- Package: Create deployment ZIP file -->
   <Target Name = "Package" DependsOnTargets="PreparePackage">
     <ItemGroup>
-      <PackageFiles Include="$(PackageDir)\**\*.*" Exclude="$(PackageDir)\*.zip" />
+      <PackageFiles Include="$(PackageDir)\**\*.*" Exclude="$(PackageDir)\*.zip;$(PackageDir)\Source\**\*.*" />
+    </ItemGroup>
+    <ItemGroup>
+      <SourceFiles Include="$(PackageDir)\Source\**\*.*" />
     </ItemGroup>
     <!--<ItemGroup>
       <SourceFiles Include="" Exclude="" />
@@ -129,8 +138,12 @@
          WorkingDirectory="$(PackageDir)"
          ZipFileName="$(PackageDir)\EasyHook-$(Major).$(Minor).$(Build).$(Revision)-Binaries.zip"
          ZipLevel="9" />
+    <Zip Files="@(SourceFiles)"
+         WorkingDirectory="$(PackageDir)\Source"
+         ZipFileName="$(PackageDir)\EasyHook-$(Major).$(Minor).$(Build).$(Revision)-Source.zip"
+         ZipLevel="9" />
   </Target>
   <Target Name = "Clean">
-    <RemoveDir Directories=".\Build;.\Deploy\NetFX4.0;.\Deploy\NetFX3.5" />
+    <RemoveDir Directories=".\Build;$(PackageDir)\NetFX4.0;$(PackageDir)\NetFX3.5;$(PackageDir)\Source" />
   </Target>
 </Project>

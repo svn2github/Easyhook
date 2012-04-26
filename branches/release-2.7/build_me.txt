@@ -1,9 +1,10 @@
-Requires MSBuild Community Tasks: http://msbuildtasks.tigris.org/
+﻿Requires MSBuild Community Tasks: http://msbuildtasks.tigris.org/
 
-***************************
-* Build Binaries
-***************************
-Use the build.bat to build binaries for all configurations (.NET 3.5/4.0, Debug/Release, x86/x64).
+*******************************************************************************
+* Build Binaries - build.bat
+*******************************************************************************
+Use the build.bat to build binaries for all configurations (.NET 3.5/4.0, 
+Debug/Release, x86/x64).
 
 .\netfx3.5-Debug\x86
 .\netfx3.5-Debug\x64
@@ -14,19 +15,23 @@ Use the build.bat to build binaries for all configurations (.NET 3.5/4.0, Debug/
 .\netfx4-Release\x86
 .\netfx4-Release\x64
 
-***************************
-* Packaging for Release
-***************************
+*******************************************************************************
+* Packaging for Release - build-package.bat
+*******************************************************************************
+**MUST RUN FROM WITHIN Subversion Repository**
 
-Use the build-package.bat to set version information, build binaries for all configurations and ZIP 
-Release builds within .\Deploy.
+Use the build-package.bat to set version information, build binaries for all 
+configurations and ZIP Release builds and Source within .\Deploy.
 
-This is used to prepare a release and needs to be executed from within a Subversion repository 
-of EasyHook. The current Subversion revision will be included in the AssemblyTitle
+This is used to prepare a release and needs to be executed from within a 
+Subversion repository of EasyHook. The current Subversion revision will be 
+included in the AssemblyTitle
 
 Generates a ZIP archive:
 .\Deploy\EasyHook-#.#.#.#-Binaries.zip
+.\Deploy\EasyHook-#.#.#.#-Source.zip
 
 Containing the following files:
 .\Deploy\NetFX3.5\*
 .\Deploy\NetFX4.0\*
+.\Deploy\Source\*
