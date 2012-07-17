@@ -312,7 +312,7 @@ Parameters:
 	LONGLONG				RelAddr;
 	LONGLONG				MemDelta = InTargetOffset - InOffset;
 
-	ASSERT(MemDelta == (LONG)MemDelta);
+	ASSERT(MemDelta == (LONG)MemDelta,L"debug.cpp - MemDelta == (LONG)MemDelta");
 
     *OutWasRelocated = FALSE;
 
@@ -415,7 +415,7 @@ Parameters:
     }
     else
     {
-	    ASSERT(ZwGetThreadId != NULL);
+	    ASSERT(ZwGetThreadId != NULL,L"debug.cpp - ZwGetThreadId != NULL");
 
 	    // use new support API
 	    if((*OutThreadId = ZwGetThreadId(InThreadHandle)) == 0)
@@ -473,7 +473,7 @@ Parameters:
     }
     else
     {
-	    ASSERT(ZwGetProcessId != NULL);
+	    ASSERT(ZwGetProcessId != NULL,L"debug.cpp - ZwGetProcessId != NULL");
 
 	    // use new support API
 	    if((*OutProcessId = ZwGetProcessId(InProcessHandle)) == 0)

@@ -46,7 +46,7 @@ void RtlSetLastError(LONG InCode, WCHAR* InMessage)
 }
 
 #ifndef DRIVER
-	void RtlAssert(BOOL InAssert)
+	void RtlAssert(BOOL InAssert,LPCWSTR lpMessageText)
 	{
 		if(InAssert)
 			return;
@@ -55,6 +55,7 @@ void RtlSetLastError(LONG InCode, WCHAR* InMessage)
 		DebugBreak();
 	#endif
 
-		FatalAppExitW(0, L"Assertion failed.");
+			FatalAppExitW(0, lpMessageText);
+		
 	}
 #endif

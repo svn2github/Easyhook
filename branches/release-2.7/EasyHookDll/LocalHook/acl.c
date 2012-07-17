@@ -54,7 +54,7 @@ Parameters:
 
     ULONG           Index;
 
-    ASSERT(IsValidPointer(InAcl, sizeof(HOOK_ACL)));
+    ASSERT(IsValidPointer(InAcl, sizeof(HOOK_ACL)),L"acl.c - IsValidPointer(InAcl, sizeof(HOOK_ACL))");
 
     if(InThreadCount > MAX_ACE_COUNT)
         return STATUS_INVALID_PARAMETER_2;

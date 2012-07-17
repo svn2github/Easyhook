@@ -433,7 +433,7 @@ ULONG GetStealthStubSize()
 		Ptr++;
 	}
 
-	ASSERT(FALSE);
+	ASSERT(FALSE,L"stealth.c - ULONG GetStealthStubSize()");
 
     return 0;
 }

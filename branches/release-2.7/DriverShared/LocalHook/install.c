@@ -446,7 +446,7 @@ ULONG GetTrampolineSize()
 		Ptr++;
 	}
 
-    ASSERT(FALSE);
+    ASSERT(FALSE,L"install.c - ULONG GetTrampolineSize()");
 
     return 0;
 }

@@ -156,7 +156,7 @@ Returns:
     ULONG               InstrLen;
     NTSTATUS            NtStatus;
 
-	ASSERT(InEPSize < 20);
+	ASSERT(InEPSize < 20,L"reloc.c - InEPSize < 20");
 
 	while(pOld < InEntryPoint + InEPSize)
 	{

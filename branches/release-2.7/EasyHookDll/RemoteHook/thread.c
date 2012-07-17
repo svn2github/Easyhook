@@ -1069,7 +1069,7 @@ ULONG GetInjectionSize()
 		Ptr++;
 	}
 
-	ASSERT(FALSE);
+	ASSERT(FALSE,L"thread.c - ULONG GetInjectionSize()");
 
     return 0;
 }

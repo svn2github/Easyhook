@@ -113,7 +113,7 @@ Returns:
 		if((InTls->IdList[i] == 0) && (Index == -1))
 			Index = i;
 		
-		ASSERT(InTls->IdList[i] != CurrentId);
+		ASSERT(InTls->IdList[i] != CurrentId,L"barrier.c - InTls->IdList[i] != CurrentId");
 	}
 
 	if(Index == -1)
@@ -293,7 +293,7 @@ Description:
 */
 	LPTHREAD_RUNTIME_INFO		Runtime = NULL;
 
-	ASSERT(TlsGetCurrentValue(&Unit.TLS, &Runtime) && Runtime->IsProtected);
+	ASSERT(TlsGetCurrentValue(&Unit.TLS, &Runtime) && Runtime->IsProtected,L"barrier.c - TlsGetCurrentValue(&Unit.TLS, &Runtime) && Runtime->IsProtected");
 
 	Runtime->IsProtected = FALSE;
 }
@@ -778,7 +778,7 @@ Description:
 		return FALSE;
 	}
 
-	ASSERT(InHandle->HLSIndex < MAX_HOOK_COUNT);
+	ASSERT(InHandle->HLSIndex < MAX_HOOK_COUNT,L"barrier.c - InHandle->HLSIndex < MAX_HOOK_COUNT");
 
 	if(!Exists)
 	{
@@ -875,9 +875,9 @@ Description:
 		InHandle -= 1;
 	#endif
 
-	ASSERT(AcquireSelfProtection());
+	ASSERT(AcquireSelfProtection(),L"barrier.c - AcquireSelfProtection()");
 
-	ASSERT(TlsGetCurrentValue(&Unit.TLS, &Info) && (Info != NULL));
+	ASSERT(TlsGetCurrentValue(&Unit.TLS, &Info) && (Info != NULL),L"barrier.c - TlsGetCurrentValue(&Unit.TLS, &Info) && (Info != NULL)");
 
 	Runtime = &Info->Entries[InHandle->HLSIndex];
 
@@ -885,13 +885,13 @@ Description:
 	Info->Current = NULL;
 	Info->Callback = NULL;
 
-	ASSERT(Runtime != NULL);
+	ASSERT(Runtime != NULL,L"barrier.c - Runtime != NULL");
 
-	ASSERT(Runtime->IsExecuting);
+	ASSERT(Runtime->IsExecuting,L"barrier.c - Runtime->IsExecuting");
 
 	Runtime->IsExecuting = FALSE;
 
-	ASSERT(*InAddrOfRetAddr == NULL);
+	ASSERT(*InAddrOfRetAddr == NULL,L"barrier.c - *InAddrOfRetAddr == NULL");
 
 	*InAddrOfRetAddr = Runtime->RetAddress;
 

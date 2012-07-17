@@ -30,7 +30,7 @@ extern "C"{
 #include "stdafx.h"
 
 #ifndef DRIVER
-	#define ASSERT(expr)            RtlAssert((BOOL)(expr));
+	#define ASSERT(expr, Msg)            RtlAssert((BOOL)(expr),(LPCWSTR) Msg);
 	#define THROW(code, Msg)        { NtStatus = (code); RtlSetLastError(GetLastError(), Msg); goto THROW_OUTRO; }
 #else
 	#define THROW(code, Msg)        { NtStatus = (code); RtlSetLastError(NtStatus, Msg); goto THROW_OUTRO; }
@@ -97,7 +97,7 @@ LONG RtlProtectMemory(
             ULONG InNewProtection);
 
 #ifndef DRIVER
-	void RtlAssert(BOOL InAssert);
+	void RtlAssert(BOOL InAssert,LPCWSTR lpMessageText);
 #endif
 
 void RtlSetLastError(

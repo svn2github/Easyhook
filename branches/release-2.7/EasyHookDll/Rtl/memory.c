@@ -33,14 +33,14 @@ void RtlAcquireLock(RTL_SPIN_LOCK* InLock)
 {
     EnterCriticalSection(&InLock->Lock);
 
-    ASSERT(!InLock->IsOwned);
+    ASSERT(!InLock->IsOwned,L"memory.c - !InLock->IsOwned");
 
     InLock->IsOwned = TRUE;
 }
 
 void RtlReleaseLock(RTL_SPIN_LOCK* InLock)
 {
-    ASSERT(InLock->IsOwned);
+    ASSERT(InLock->IsOwned,L"memory.c - InLock->IsOwned");
 
     InLock->IsOwned = FALSE;
 
@@ -49,7 +49,7 @@ void RtlReleaseLock(RTL_SPIN_LOCK* InLock)
 
 void RtlDeleteLock(RTL_SPIN_LOCK* InLock)
 {
-    ASSERT(!InLock->IsOwned);
+    ASSERT(!InLock->IsOwned,L"memory.c - InLock->IsOwned");
 
     DeleteCriticalSection(&InLock->Lock);
 }
@@ -149,7 +149,7 @@ FINALLY_OUTRO:
 
 void RtlFreeMemory(void* InPointer)
 {
-	ASSERT(InPointer != NULL);
+	ASSERT(InPointer != NULL,L"InPointer != NULL");
 
 #ifdef _DEBUG
     free(InPointer);
@@ -168,7 +168,7 @@ BOOL RtlIsValidPointer(PVOID InPtr, ULONG InSize)
     if((InPtr == NULL) || (InPtr == (PVOID)~0))
         return FALSE;
 
-    ASSERT(!IsBadReadPtr(InPtr, InSize));
+    ASSERT(!IsBadReadPtr(InPtr, InSize),L"memory.c - !IsBadReadPtr(InPtr, InSize)");
 
     return TRUE;
 }
