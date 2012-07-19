@@ -570,7 +570,22 @@ namespace EasyHook
             {
                 ManagedRemoteInfo RemoteInfo = new ManagedRemoteInfo();
                 RemoteInfo.HostPID = InHostPID;
-                RemoteInfo.UserParams = InPassThruArgs;
+				// We first serialise parameters so that they can be deserialised AFTER the UserLibrary is loaded
+                BinaryFormatter format = new BinaryFormatter();
+                List<object> args = new List<object>();
+                if (InPassThruArgs != null)
+                {
+                    foreach (var arg in InPassThruArgs)
+                    {
+                        using(MemoryStream ms = new MemoryStream())
+						{
+                            format.Serialize(ms, arg);
+                            args.Add(ms.ToArray());
+						}
+                    }
+                }
+                RemoteInfo.UserParams = args.ToArray();
+
 				RemoteInfo.RequireStrongName = InRequireStrongName;
 
                 GCHandle hPassThru = PrepareInjection(

@@ -65,17 +65,27 @@ namespace EasyHook
         private sealed class AllowAllAssemblyVersionsDeserializationBinder :
             System.Runtime.Serialization.SerializationBinder
         {
+            private Assembly _assembly;
+            public AllowAllAssemblyVersionsDeserializationBinder(): this(Assembly.GetExecutingAssembly())
+            {
+            }
+
+            public AllowAllAssemblyVersionsDeserializationBinder(Assembly assembly)
+            {
+                _assembly = assembly;
+            }
+
             public override Type BindToType(string assemblyName, string typeName)
             {
                 Type typeToDeserialize = null;
 
-                String currentAssembly = Assembly.GetExecutingAssembly().FullName;
+                String currentAssembly = _assembly.FullName;
 
                 // In this case we are always using the current assembly
                 assemblyName = currentAssembly;
 
                 // Get the type using the typeName and assemblyName
-                typeToDeserialize = Type.GetType(String.Format("{0}, {1}", typeName, assemblyName));
+                typeToDeserialize = _assembly.GetType(typeName);
 
                 return typeToDeserialize;
             }
@@ -194,10 +204,22 @@ namespace EasyHook
                         Config.PrintError("Could not load assembly {0}, {1}", RemoteInfo.UserLibrary, RemoteInfo.UserLibraryName);
                         return 0;
                     }
-                    
+
+					// Only attempt to deserialise parameters after we have loaded the UserAssembly
+					// this allows types from the UserAssembly to be passed as parameters
+                    BinaryFormatter format = new BinaryFormatter();
+                    format.Binder = new AllowAllAssemblyVersionsDeserializationBinder(UserAssembly);
+                    for (int i = 1; i < ParamArray.Length; i++)
+                    {
+                        using(MemoryStream ms = new MemoryStream((byte[])ParamArray[i]))
+						{
+                            ParamArray[i] = format.Deserialize(ms);
+						}
+                    }
+
                     // search for user library entry point...
                     Type[] ExportedTypes = UserAssembly.GetExportedTypes();
-
+                    
                     for (int iType = 0; iType < ExportedTypes.Length; iType++)
                     {
                         EntryPoint = ExportedTypes[iType];
