@@ -79,13 +79,16 @@ namespace EasyHook
             {
                 Type typeToDeserialize = null;
 
-                String currentAssembly = _assembly.FullName;
-
-                // In this case we are always using the current assembly
-                assemblyName = currentAssembly;
-
-                // Get the type using the typeName and assemblyName
-                typeToDeserialize = _assembly.GetType(typeName);
+                try
+                {
+                    // 1. First try to bind without overriding assembly
+                    typeToDeserialize = Type.GetType(String.Format("{0}, {1}", typeName, assemblyName));
+                }
+                catch
+                {
+                    // 2. Failed to find assembly or type, now try with overridden assembly
+                    typeToDeserialize = _assembly.GetType(typeName);
+                }
 
                 return typeToDeserialize;
             }
