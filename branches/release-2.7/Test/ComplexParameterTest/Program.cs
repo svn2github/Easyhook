@@ -28,19 +28,19 @@ namespace ComplexParameterTest
 
             try
             {
-                bool noGAC = false;
-                try
-                {
-                    Config.Register(
-                        "Test passing an object parameter",
-                        "ComplexParameterInject.dll");
-                }
-                catch (ApplicationException ae)
-                {
-                    Console.WriteLine("This is an administrative task! Attempting without GAC...");
+                bool noGAC = true;
+                //try
+                //{
+                //    Config.Register(
+                //        "Test passing an object parameter",
+                //        "ComplexParameterInject.dll");
+                //}
+                //catch (ApplicationException ae)
+                //{
+                //    Console.WriteLine("This is an administrative task! Attempting without GAC...");
 
-                    noGAC = true;
-                }
+                //    noGAC = true;
+                //}
                 string channelName = null;
                 RemoteHooking.IpcCreateServer<ComplexParameterInject.TestInterface>(ref channelName, WellKnownObjectMode.SingleCall);
 
@@ -69,7 +69,6 @@ namespace ComplexParameterTest
             {
                 Console.WriteLine("Injection failed: {0}:{1}", e.GetType().FullName, e.Message);
             }
-
 
             Console.WriteLine("Press <enter> to continue");
             Console.ReadLine();
