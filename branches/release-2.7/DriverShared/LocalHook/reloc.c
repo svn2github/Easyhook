@@ -37,12 +37,13 @@ Returns:
 */
 	LONG			Length = -1;
 
-	// might return wrong results for exotic instructions, leading to unknown application behavior...
-#ifdef _M_X64
-	Length = GetInstructionLength_x64(InPtr, 64);
-#else
-	Length = GetInstructionLength_x86(InPtr, 0);
-#endif
+// TODO: Implement GetInstructionLength_x86 and GetInstructionLength_x64
+//	// might return wrong results for exotic instructions, leading to unknown application behavior...
+//#ifdef _M_X64
+//	Length = GetInstructionLength_x64(InPtr, 64);
+//#else
+//	Length = GetInstructionLength_x86(InPtr, 0);
+//#endif
 
 	if(Length > 0)
 		return Length;	

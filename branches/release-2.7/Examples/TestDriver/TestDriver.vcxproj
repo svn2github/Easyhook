@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -87,6 +87,8 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.sys</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -114,7 +116,6 @@
     <Link>
       <AdditionalOptions>/ignore:4078 /SECTION:INIT,d /FORCE:MULTIPLE /osversion:5.0 /align:0x20 /pdbcompress %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>ntoskrnl.lib;hal.lib;ntstrsafe.lib</AdditionalDependencies>
-      <OutputFile>$(OutDir)TestDriver64.sys</OutputFile>
       <Version>1.0</Version>
       <SuppressStartupBanner>false</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(WDKROOT)\lib\wnet\amd64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -134,7 +135,7 @@
     <PostBuildEvent>
       <Command>REM "$_(DRIVERWORKS)\bin\nmsym.exe" /translate:source,package,always $(TargetPath)
 REM "$_(DRIVERWORKS)\bin\nmsym.exe" /sym:$(TargetDir)$(TargetName).nms
-$(WDKROOT)\bin\SelfSign\SignTool sign /v /s EasyHookTestCertStore /n EasyHookTestCert "$(TargetPath)"
+$(WDKROOT)\bin\amd64\SignTool sign /v /s EasyHookTestCertStore /n "EasyHookTestOnly" "$(TargetPath)"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
