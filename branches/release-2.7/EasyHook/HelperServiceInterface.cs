@@ -22,6 +22,8 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Reflection;
 using System.Threading;
@@ -29,10 +31,9 @@ using System.Threading;
 namespace EasyHook
 {
     #pragma warning disable 1591
-
+    
     public class HelperServiceInterface : MarshalByRefObject
     {
-
         public void InjectEx(
                 Int32 InHostPID,
                 Int32 InTargetPID,

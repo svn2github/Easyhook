@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -27,8 +27,9 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'netfx3.5-Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,8 +41,9 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>..\Build\$(Configuration)\x64\EasyHook.XML</DocumentationFile>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'netfx3.5-Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -52,8 +54,9 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>..\Build\$(Configuration)\x64\EasyHook.XML</DocumentationFile>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'netfx4-Release|AnyCPU'">
     <OutputPath>..\Build\$(Configuration)\x64\</OutputPath>
@@ -79,6 +82,63 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'netfx2.0-Debug|AnyCPU'">
+    <OutputPath>..\Build\netfx2.0-Debug\x64\</OutputPath>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DocumentationFile>..\Build\netfx2.0-Debug\x64\EasyHook.XML</DocumentationFile>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'netfx3.5-Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\netfx3.5-Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;NET35</DefineConstants>
+    <DocumentationFile>..\Build\netfx3.5-Debug\x64\EasyHook.XML</DocumentationFile>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'netfx3.5-Release|x86'">
+    <OutputPath>bin\x86\netfx3.5-Release\</OutputPath>
+    <DefineConstants>TRACE;NET35</DefineConstants>
+    <DocumentationFile>..\Build\netfx3.5-Release\x64\EasyHook.XML</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'netfx4-Release|x86'">
+    <OutputPath>bin\x86\netfx4-Release\</OutputPath>
+    <DefineConstants>TRACE;NET4</DefineConstants>
+    <DocumentationFile>..\Build\netfx4-Release\x64\EasyHook.XML</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'netfx4-Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\netfx4-Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;NET4</DefineConstants>
+    <DocumentationFile>..\Build\netfx4-Debug\x64\EasyHook.XML</DocumentationFile>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'netfx2.0-Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\Build\netfx2.0-Debug\x64\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DocumentationFile>..\Build\netfx2.0-Debug\x64\EasyHook.XML</DocumentationFile>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -86,22 +146,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Domain\DomainIdentifier.cs" />
     <Compile Include="GACWrap.cs" />
-    <Compile Include="IPC\-DummyCore.cs" />
-    <Compile Include="IPC\ChannelProperties.cs" />
-    <Compile Include="IPC\ConnectionManager.cs" />
-    <Compile Include="IPC\DomainConnectionEndPoint.cs" />
-    <Compile Include="IPC\DuplexChannel.cs" />
-    <Compile Include="IPC\DuplexChannelEndPointObject.cs" />
-    <Compile Include="IPC\DuplexChannelReadyEventHandler.cs" />
-    <Compile Include="IPC\DuplexChannelState.cs" />
-    <Compile Include="IPC\EndPointConfigurationData.cs" />
-    <Compile Include="IPC\SimplexChannel.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Debugging.cs" />
     <Compile Include="DllImport.cs" />
-    <Compile Include="IPC\EndPointObject.cs" />
     <Compile Include="HelperServiceInterface.cs" />
     <Compile Include="InjectionLoader.cs" />
     <Compile Include="LocalHook.cs" />
@@ -149,6 +197,7 @@
   </Target>
   -->
   <Target Name="AfterBuild">
-    <Copy SourceFiles="..\Build\$(Configuration)\x64\$(AssemblyName).dll" DestinationFolder="..\Build\$(Configuration)\x86\"></Copy>
+    <Copy SourceFiles="..\Build\$(Configuration)\x64\$(AssemblyName).dll" DestinationFolder="..\Build\$(Configuration)\x86\">
+    </Copy>
   </Target>
 </Project>
