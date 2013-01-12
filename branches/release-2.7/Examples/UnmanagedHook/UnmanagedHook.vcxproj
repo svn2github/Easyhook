@@ -1,14 +1,6 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="netfx2.0-Debug|Win32">
-      <Configuration>netfx2.0-Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="netfx2.0-Debug|x64">
-      <Configuration>netfx2.0-Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="netfx3.5-Debug|Win32">
       <Configuration>netfx3.5-Debug</Configuration>
       <Platform>Win32</Platform>
@@ -83,12 +75,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='netfx4-Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='netfx2.0-Debug|Win32'">
-    <PlatformToolset>v110</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='netfx2.0-Debug|x64'">
-    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -343,6 +329,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="UnmanagedHook.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\EasyHookDll\EasyHookDll.vcxproj">
+      <Project>{d087e484-dbc9-4a2e-8368-c1d0e524994d}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

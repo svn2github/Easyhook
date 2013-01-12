@@ -119,7 +119,7 @@
       <AdditionalOptions>/ignore:4078 /SECTION:INIT,d /FORCE:MULTIPLE /osversion:5.0 /align:0x20 /pdbcompress %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>ntoskrnl.lib;hal.lib;ntstrsafe.lib</AdditionalDependencies>
       <OutputFile>$(TargetPath)</OutputFile>
-      <Version>2.7.4499.0</Version>
+      <Version>1.0</Version>
       <SuppressStartupBanner>false</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(WDKROOT)\lib\wnet\amd64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
@@ -138,7 +138,7 @@
     <PostBuildEvent>
       <Command>REM "$_(DRIVERWORKS)\bin\nmsym.exe" /translate:source,package,always $(TargetPath)
 REM "$_(DRIVERWORKS)\bin\nmsym.exe" /sym:$(TargetDir)$(TargetName).nms
-$(WDKROOT)\bin\SelfSign\SignTool sign /v /s EasyHookTestCertStore /n EasyHookTestCert "$(TargetPath)"
+$(WDKROOT)\bin\amd64\SignTool sign /v /s EasyHookTestCertStore /n "EasyHookTestOnly" "$(TargetPath)"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -169,7 +169,7 @@ $(WDKROOT)\bin\SelfSign\SignTool sign /v /s EasyHookTestCertStore /n EasyHookTes
       <AdditionalOptions>/ignore:4078 /SECTION:INIT,d /FORCE:MULTIPLE /osversion:5.0 /align:0x20 /pdbcompress %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>ntoskrnl.lib;hal.lib;ntstrsafe.lib</AdditionalDependencies>
       <OutputFile>$(TargetPath)</OutputFile>
-      <Version>2.7.4499.0</Version>
+      <Version>1.0</Version>
       <SuppressStartupBanner>false</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(WDKROOT)\lib\wxp\i386;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
@@ -223,7 +223,7 @@ $(WDKROOT)\bin\SelfSign\SignTool sign /v /s EasyHookTestCertStore /n EasyHookTes
       <AdditionalOptions>/ignore:4078 /SECTION:INIT,d /FORCE:MULTIPLE /osversion:5.0 /align:0x20 /pdbcompress %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>ntoskrnl.lib;hal.lib;ntstrsafe.lib</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).sys</OutputFile>
-      <Version>2.7.4499.0</Version>
+      <Version>5.0</Version>
       <AdditionalLibraryDirectories>$(WDKROOT)\lib\wlh\amd64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -278,7 +278,7 @@ $(WDKROOT)\bin\SelfSign\SignTool sign /v /s EasyHookTestCertStore /n EasyHookTes
       <AdditionalOptions>/ignore:4078 /SECTION:INIT,d /FORCE:MULTIPLE /osversion:5.0 /align:0x20 /pdbcompress %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>ntoskrnl.lib;hal.lib;ntstrsafe.lib</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).sys</OutputFile>
-      <Version>2.7.4499.0</Version>
+      <Version>5.0</Version>
       <AdditionalLibraryDirectories>$(WDKROOT)\lib\wlh\amd64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -327,23 +327,6 @@ ml64.exe /D_WIN32 /c /Cx "%(FullPath)"
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(Filename).obj;%(Outputs)</Outputs>
     </CustomBuild>
     <CustomBuild Include="..\DriverShared\ASM\HookSpecific_x86.asm">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd "$(IntDir)"
-ml.exe /D_WIN32 /c /Cx "%(FullPath)"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename).obj;%(Outputs)</Outputs>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="..\DriverShared\ASM\ILD_x64.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd "$(IntDir)"
-ml64.exe /D_WIN32 /c /Cx "%(FullPath)"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(Filename).obj;%(Outputs)</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\DriverShared\ASM\ILD_x86.asm">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd "$(IntDir)"
 ml.exe /D_WIN32 /c /Cx "%(FullPath)"
 </Command>

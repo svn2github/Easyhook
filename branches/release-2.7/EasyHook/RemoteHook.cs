@@ -190,6 +190,43 @@ namespace EasyHook
             return Builder.ToString();
         }
 
+        /// <summary>
+        /// Creates a globally reachable, managed IPC-Port.
+        /// </summary>
+        /// <remarks>
+        /// Because it is something tricky to get a port working for any constellation of
+        /// target processes, I decided to write a proper wrapper method. Just keep the returned
+        /// <see cref="IpcChannel"/> alive, by adding it to a global list or static variable,
+        /// as long as you want to have the IPC port open.
+        /// </remarks>
+        /// <typeparam name="TRemoteObject">
+        /// A class derived from <see cref="MarshalByRefObject"/> which provides the
+        /// method implementations this server should expose.
+        /// </typeparam>
+        /// <param name="InObjectMode">
+        /// <see cref="WellKnownObjectMode.SingleCall"/> if you want to handle each call in an new
+        /// object instance, <see cref="WellKnownObjectMode.Singleton"/> otherwise. The latter will implicitly
+        /// allow you to use "static" remote variables.
+        /// </param>
+        /// <param name="RefChannelName">
+        /// Either <c>null</c> to let the method generate a random channel name to be passed to 
+        /// <see cref="IpcConnectClient{TRemoteObject}"/> or a predefined one. If you pass a value unequal to 
+        /// <c>null</c>, you shall also specify all SIDs that are allowed to connect to your channel!
+        /// </param>
+        /// <param name="InAllowedClientSIDs">
+        /// If no SID is specified, all authenticated users will be allowed to access the server
+        /// channel by default. You must specify an SID if <paramref name="RefChannelName"/> is unequal to <c>null</c>.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IpcChannel"/> that shall be keept alive until the server is not needed anymore.
+        /// </returns>
+        /// <exception cref="System.Security.HostProtectionException">
+        /// If a predefined channel name is being used, you are required to specify a list of well known SIDs
+        /// which are allowed to access the newly created server.
+        /// </exception>
+        /// <exception cref="RemotingException">
+        /// The given channel name is already in use.
+        /// </exception>
         public static IpcServerChannel IpcCreateServer<TRemoteObject>(
                 ref String RefChannelName,
                 WellKnownObjectMode InObjectMode,

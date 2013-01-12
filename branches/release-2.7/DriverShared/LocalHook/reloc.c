@@ -21,6 +21,11 @@
     about the project and latest updates.
 */
 #include "stdafx.h"
+#include "disassembler/udis86.h"
+
+// GetInstructionLength_x64/x86 were replaced with the Udis86 library
+// (http://udis86.sourceforge.net) see udis86.h/.c for appropriate
+// licensing and copyright notices.
 
 EASYHOOK_NT_INTERNAL LhGetInstructionLength(void* InPtr)
 {
@@ -35,26 +40,25 @@ Returns:
 
         The given pointer references invalid machine code.
 */
-	LONG			Length = -1;
+	LONG			length = -1;
+	// some exotic instructions might not be supported see the project
+    // at http://udis86.sourceforge.net and the forums.
 
-// TODO: Implement GetInstructionLength_x86 and GetInstructionLength_x64
-//	// might return wrong results for exotic instructions, leading to unknown application behavior...
-//#ifdef _M_X64
-//	Length = GetInstructionLength_x64(InPtr, 64);
-//#else
-//	Length = GetInstructionLength_x86(InPtr, 0);
-//#endif
+    ud_t ud_obj;
+    ud_init(&ud_obj);
+#ifdef _M_X64
+    ud_set_mode(&ud_obj, 64);
+#else
+    ud_set_mode(&ud_obj, 32);
+#endif
+    ud_set_input_buffer(&ud_obj, (uint8_t *)InPtr, 32);
+    length = ud_disassemble(&ud_obj); // usually only between 1 and 5
 
-	if(Length > 0)
-		return Length;	
+	if(length > 0)
+		return length;
 	else
 		return STATUS_INVALID_PARAMETER;
 }
-
-
-
-
-
 
 EASYHOOK_NT_INTERNAL LhRoundToNextInstruction(
 			void* InCodePtr,
@@ -99,10 +103,6 @@ Returns:
 THROW_OUTRO:
     return NtStatus;
 }
-
-
-
-
 
 
 EASYHOOK_NT_INTERNAL LhRelocateEntryPoint(

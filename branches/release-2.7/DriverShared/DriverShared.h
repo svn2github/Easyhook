@@ -39,9 +39,6 @@ extern "C"{
 #define EASYHOOK_NT_INTERNAL            EXTERN_C NTSTATUS __stdcall
 #define EASYHOOK_BOOL_INTERNAL          EXTERN_C BOOL __stdcall
 
-EXTERN_C int __stdcall GetInstructionLength_x64(void* InPtr, int InType);
-EXTERN_C int __stdcall GetInstructionLength_x86(void* InPtr, int InType);
-
 #define EASYHOOK_INJECT_MANAGED     0x00000001
 
 typedef struct _NOTIFICATION_REQUEST_
