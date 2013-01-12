@@ -1,10 +1,10 @@
 *********************************************************************************************
-******************************************************* 1) License information
+* 1) License information
 *********************************************************************************************
 
     EasyHook - The reinvention of Windows API hooking
  
-    Copyright (C) 2009 Christoph Husse & (C) 2012 EasyHook Development Team
+    Copyright (C) 2009 Christoph Husse & (C) 2013 EasyHook Development Team
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,12 @@
 
     Please visit http://www.codeplex.com/easyhook for more information
     about the project and latest updates.
-    
+
+UDIS86:
+    udis86 is Copyright (c) 2002-2012, Vivek Thampi <vivek.mt@gmail.com>
+    See DirectShared\Disassembler\udis86-LICENSE.txt for license details.
+    Minor modifications have been made for it to compile correctly in VC++.
+    More information can be found at http://udis86.sourceforge.net/
 
 BUG REPORTS:
     Reporting bugs is the only chance to get them fixed! Don't consider your
@@ -35,7 +40,7 @@ EVENT LOGS:
     information there...
 
 *********************************************************************************************
-***************************************************** 2) How to compile
+* 2) How to compile
 *********************************************************************************************
 
 EasyHook 2.7 includes a MSBuild script to build all versions of the binaries as well as
@@ -73,7 +78,7 @@ necessary to ship an application based on EasyHook.
 
 
 *********************************************************************************************
-***************************************************** 3) Prerequisites
+* 3) Prerequisites
 *********************************************************************************************
 
 Since the CRT is now statically compiled, you won't need the Visual Studio Redistributable 
