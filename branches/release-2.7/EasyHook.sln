@@ -149,6 +149,7 @@ Global
 		{56B9A390-F320-4224-BFE3-380DDAC2370F}.netfx3.5-Debug|x64.ActiveCfg = netfx3.5-Debug|Any CPU
 		{56B9A390-F320-4224-BFE3-380DDAC2370F}.netfx3.5-Debug|x64.Build.0 = netfx3.5-Debug|Any CPU
 		{56B9A390-F320-4224-BFE3-380DDAC2370F}.netfx3.5-Release|Win32.ActiveCfg = netfx3.5-Release|x86
+		{56B9A390-F320-4224-BFE3-380DDAC2370F}.netfx3.5-Release|Win32.Build.0 = netfx3.5-Release|x86
 		{56B9A390-F320-4224-BFE3-380DDAC2370F}.netfx3.5-Release|x64.ActiveCfg = netfx3.5-Release|Any CPU
 		{56B9A390-F320-4224-BFE3-380DDAC2370F}.netfx3.5-Release|x64.Build.0 = netfx3.5-Release|Any CPU
 		{56B9A390-F320-4224-BFE3-380DDAC2370F}.netfx4-Debug|Win32.ActiveCfg = netfx4-Debug|x86

@@ -213,6 +213,7 @@ namespace EasyHook
         /// <see cref="IpcConnectClient{TRemoteObject}"/> or a predefined one. If you pass a value unequal to 
         /// <c>null</c>, you shall also specify all SIDs that are allowed to connect to your channel!
         /// </param>
+        /// <param name="ipcInterface">Provide a TRemoteObject object to be made available as a well known type on the server end of the channel.</param>
         /// <param name="InAllowedClientSIDs">
         /// If no SID is specified, all authenticated users will be allowed to access the server
         /// channel by default. You must specify an SID if <paramref name="RefChannelName"/> is unequal to <c>null</c>.
