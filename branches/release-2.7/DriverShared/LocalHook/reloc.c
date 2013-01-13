@@ -204,13 +204,17 @@ Returns:
 				}
 			}break;
 
-		/*
+        case 0xEB: // jmp imm8
+            {
+                AbsAddr = *((__int8*)(pOld + 1));
+                OpcodeLen = 2;
+            }break;
+        /*
 			The problem with (conditional) jumps is that there will be no return into the relocated entry point.
 			So the execution will be proceeded in the original method and this will cause the whole
 			application to remain in an unstable state. Only near jumps with 32-bit offset are allowed as
 			first instruction (see above)...
 		*/
-		case 0xEB: // jmp imm8
 		case 0xE3: // jcxz imm8
 			{
 				THROW(STATUS_NOT_SUPPORTED, L"Hooking near (conditional) jumps is not supported.");
@@ -256,6 +260,7 @@ Returns:
 					*(pRes++) = 0xD0;
 				}break;
 			case 0xE9: // jmp eax
+            case 0xEB: // jmp imm8
 				{
 					*(pRes++) = 0xFF;
 					*(pRes++) = 0xE0;
