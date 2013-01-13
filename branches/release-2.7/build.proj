@@ -4,8 +4,8 @@
     <PackageDir>.\Deploy</PackageDir>
     <FX35BuildDir>.\Build\netfx3.5-Release\x64</FX35BuildDir>
     <FX4BuildDir>.\Build\netfx4-Release\x64</FX4BuildDir>
-    <AssemblyCopyright>Copyright &#169; 2012 EasyHook Team</AssemblyCopyright>
-    <AssemblyTitlePostfix>(alpha)</AssemblyTitlePostfix>
+    <AssemblyCopyright>Copyright &#169; 2013 EasyHook Team</AssemblyCopyright>
+    <AssemblyTitlePostfix>(beta)</AssemblyTitlePostfix>
   </PropertyGroup>
 
   <!-- http://msbuildtasks.tigris.org/ -->
@@ -83,6 +83,7 @@
       <NetFX35Files Include="$(FX35BuildDir)\EasyHook64Svc.exe" />
       <NetFX35Files Include="$(FX35BuildDir)\FileMon.exe" />
       <NetFX35Files Include="$(FX35BuildDir)\ProcessMonitor.exe" />
+      <NetFX35Files Include="$(FX35BuildDir)\ComplexParameterTest.exe" />
       <NetFX35Files Include="$(FX35BuildDir)\*.sys" />
     </ItemGroup>
     <ItemGroup>
@@ -92,6 +93,7 @@
       <NetFX4Files Include="$(FX4BuildDir)\EasyHook64Svc.exe" />
       <NetFX4Files Include="$(FX4BuildDir)\FileMon.exe" />
       <NetFX4Files Include="$(FX4BuildDir)\ProcessMonitor.exe" />
+      <NetFX4Files Include="$(FX4BuildDir)\ComplexParameterTest.exe" />
       <NetFX4Files Include="$(FX4BuildDir)\*.sys" />
     </ItemGroup>
     <MakeDir Directories = "$(PackageDir)"
