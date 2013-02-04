@@ -869,6 +869,106 @@ namespace EasyHook
         /// parameter you can add more flags like DETACHED_PROCESS, CREATE_NEW_CONSOLE or
         /// whatever!
         /// </param>
+        /// <param name="InOptions">
+        /// A valid combination of options.
+        /// </param>
+        /// <param name="InLibraryPath_x86">
+        /// A partially qualified assembly name or a relative/absolute file path of the 32-bit version of your library. 
+        /// For example "MyAssembly, PublicKeyToken=248973975895496" or ".\Assemblies\\MyAssembly.dll". 
+        /// </param>
+        /// <param name="InLibraryPath_x64">
+        /// A partially qualified assembly name or a relative/absolute file path of the 64-bit version of your library. 
+        /// For example "MyAssembly, PublicKeyToken=248973975895496" or ".\Assemblies\\MyAssembly.dll". 
+        /// </param>
+        /// <param name="OutProcessId">
+        /// The process ID of the newly created process.
+        /// </param>
+        /// <param name="InPassThruArgs">
+        /// A serializable list of parameters being passed to your library entry points <c>Run()</c> and
+        /// <c>Initialize()</c>.
+        /// </param>
+        /// <exception cref="ArgumentException">
+        /// The given EXE path could not be found.
+        /// </exception>
+        public static void CreateAndInject(
+            String InEXEPath,
+            String InCommandLine,
+            Int32 InProcessCreationFlags,
+            InjectionOptions InOptions,
+            String InLibraryPath_x86,
+            String InLibraryPath_x64,
+            out Int32 OutProcessId,
+            params Object[] InPassThruArgs)
+        {
+            Int32 RemotePID;
+            Int32 RemoteTID;
+
+            // create suspended process...
+            NativeAPI.RtlCreateSuspendedProcess(
+                InEXEPath,
+                InCommandLine,
+                InProcessCreationFlags,
+                out RemotePID,
+                out RemoteTID);
+
+            try
+            {
+                InjectEx(
+                    NativeAPI.GetCurrentProcessId(),
+                    RemotePID,
+                    RemoteTID,
+                    0x20000000,
+                    InLibraryPath_x86,
+                    InLibraryPath_x64,
+                    ((InOptions & InjectionOptions.NoWOW64Bypass) == 0),
+                    ((InOptions & InjectionOptions.NoService) == 0),
+                    ((InOptions & InjectionOptions.DoNotRequireStrongName) == 0),
+                    InPassThruArgs);
+
+                OutProcessId = RemotePID;
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    Process.GetProcessById(RemotePID).Kill();
+                }
+                catch (Exception) { }
+
+                throw e;
+            }
+        }
+
+        /// <summary>
+        /// Creates a new process which is started suspended until you call <see cref="WakeUpProcess"/>
+        /// from within your injected library <c>Run()</c> method. This allows you to hook the target
+        /// BEFORE any of its usual code is executed. In situations where a target has debugging and
+        /// hook preventions, you will get a chance to block those mechanisms for example...
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Please note that this method might fail when injecting into managed processes, especially
+        /// when the target is using the CLR hosting API and takes advantage of AppDomains. For example,
+        /// the Internet Explorer won't be hookable with this method. In such a case your only options
+        /// are either to hook the target with the unmanaged API or to hook it after (non-supended) creation 
+        /// with the usual <see cref="Inject"/> method.
+        /// </para>
+        /// <para>
+        /// See <see cref="Inject"/> for more information. The exceptions listed here are additional
+        /// to the ones listed for <see cref="Inject"/>.
+        /// </para>
+        /// </remarks>
+        /// <param name="InEXEPath">
+        /// A relative or absolute path to the desired executable.
+        /// </param>
+        /// <param name="InCommandLine">
+        /// Optional command line parameters for process creation.
+        /// </param>
+        /// <param name="InProcessCreationFlags">
+        /// Internally CREATE_SUSPENDED is already passed to CreateProcess(). With this
+        /// parameter you can add more flags like DETACHED_PROCESS, CREATE_NEW_CONSOLE or
+        /// whatever!
+        /// </param>
         /// <param name="InLibraryPath_x86">
         /// A partially qualified assembly name or a relative/absolute file path of the 32-bit version of your library. 
         /// For example "MyAssembly, PublicKeyToken=248973975895496" or ".\Assemblies\\MyAssembly.dll". 
@@ -896,43 +996,15 @@ namespace EasyHook
             out Int32 OutProcessId,
             params Object[] InPassThruArgs)
         {
-            Int32 RemotePID;
-            Int32 RemoteTID;
-
-            // create suspended process...
-            NativeAPI.RtlCreateSuspendedProcess(
-                InEXEPath,
-                InCommandLine,
-                InProcessCreationFlags,
-                out RemotePID,
-                out RemoteTID);
-
-            try
-            {
-                InjectEx(
-                    NativeAPI.GetCurrentProcessId(),
-                    RemotePID,
-                    RemoteTID,
-                    0x20000000, 
-                    InLibraryPath_x86,
-                    InLibraryPath_x64,
-                    true,
-                    false,
-                    true, // TODO: allow requiring a Strong Name to be an option
-                    InPassThruArgs);
-
-                OutProcessId = RemotePID;
-            }
-            catch (Exception e)
-            {
-                try
-                {
-                    Process.GetProcessById(RemotePID).Kill();
-                }
-                catch (Exception) { }
-
-                throw e;
-            }
+            CreateAndInject(
+                InEXEPath, 
+                InCommandLine, 
+                InProcessCreationFlags, 
+                InjectionOptions.NoService, 
+                InLibraryPath_x86, 
+                InLibraryPath_x64, 
+                out OutProcessId, 
+                InPassThruArgs);
         }
 
         /// <summary>
