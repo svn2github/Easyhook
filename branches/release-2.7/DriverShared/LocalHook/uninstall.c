@@ -167,8 +167,8 @@ Descriptions:
 
 */
     PLOCAL_HOOK_INFO        Hook;
-    NTSTATUS                NtStatus;
-
+    NTSTATUS                NtStatus = STATUS_SUCCESS;
+    UINT32                  Timeout = 1000;
     while(TRUE)
     {
         // pop from removal list
@@ -196,13 +196,26 @@ Descriptions:
 			*((ULONGLONG*)(Hook->TargetProc + 8)) = Hook->TargetBackup_x64;
 #endif
 
-            // release memory...
-            while(*Hook->IsExecutedPtr > 0)
+            while (TRUE)
             {
-                RtlSleep(100);
-            }
+                if (*Hook->IsExecutedPtr <= 0)
+                {
+                    // release memory...
+                    LhFreeMemory(&Hook);
+                    break;
+                }
 
-            LhFreeMemory(&Hook);
+                if (Timeout < 0)
+                {
+                    // this hook was not released within timeout or cannot be released.
+                    // We will leak the memory, but not hang forever.
+                    NtStatus = STATUS_TIMEOUT;
+                    break;
+                }
+
+                RtlSleep(25);
+                Timeout -= 25;
+            }
         }
         else
         {
@@ -210,9 +223,6 @@ Descriptions:
         }
     }
 
-    RETURN(STATUS_SUCCESS);
-
-FINALLY_OUTRO:
     return NtStatus;
 }
 
