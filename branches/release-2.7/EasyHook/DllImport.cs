@@ -34,7 +34,7 @@ namespace EasyHook
         private const String DllName = "EasyHook32.dll";
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode)]
-        public static extern String RtlGetLastErrorString();
+        public static extern String RtlGetLastErrorStringCopy();
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         public static extern Int32 RtlGetLastError();
@@ -484,7 +484,7 @@ namespace EasyHook
         public static String RtlGetLastErrorString()
         {
             if (Is64Bit) return NativeAPI_x64.RtlGetLastErrorString();
-            else return NativeAPI_x86.RtlGetLastErrorString();
+            else return NativeAPI_x86.RtlGetLastErrorStringCopy();
         }
 
         public static void LhUninstallAllHooks()
