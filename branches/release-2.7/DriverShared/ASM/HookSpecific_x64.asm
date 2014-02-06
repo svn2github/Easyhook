@@ -379,7 +379,7 @@ HookInject_EXECUTABLE:
 	mov rcx, qword ptr [r14 + 32]
 	
 	lea rax, qword ptr [rsp + 8]
-	sub rsp, 40
+	sub rsp, 48
 	jmp rax
 	
 ; outro signature, to automatically determine code size
