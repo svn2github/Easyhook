@@ -49,7 +49,7 @@ void RtlSetLastError(LONG InCode, WCHAR* InMessage)
 {
     LastErrorCode = InCode;
 
-    if(InCode == STATUS_SUCCESS)
+    if(InMessage == NULL)
         LastError = L"";
     else
         LastError = (PWCHAR)InMessage;
