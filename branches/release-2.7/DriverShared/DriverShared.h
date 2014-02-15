@@ -107,6 +107,18 @@ ULONGLONG LhBarrierIntro(LOCAL_HOOK_INFO* InHandle, void* InRetAddr, void** InAd
 
 void* __stdcall LhBarrierOutro(LOCAL_HOOK_INFO* InHandle, void** InAddrOfRetAddr);
 
+EASYHOOK_NT_INTERNAL LhDisassembleInstruction(
+            void* InPtr, 
+            ULONG* length, 
+            PSTR buf, 
+            LONG buffSize, 
+            ULONG64 *nextInstr);
+
+EASYHOOK_NT_INTERNAL LhRelocateRIPRelativeInstruction(
+	        ULONGLONG InOffset,
+	        ULONGLONG InTargetOffset,
+            BOOL* OutWasRelocated);
+
 EASYHOOK_NT_INTERNAL LhRelocateEntryPoint(
 				UCHAR* InEntryPoint,
 				ULONG InEPSize,

@@ -42,7 +42,7 @@ Returns:
 */
 	LONG			length = -1;
 	// some exotic instructions might not be supported see the project
-    // at http://udis86.sourceforge.net and the forums.
+    // at https://github.com/vmt/udis86 and the forums.
 
     ud_t ud_obj;
     ud_init(&ud_obj);
@@ -104,6 +104,150 @@ THROW_OUTRO:
     return NtStatus;
 }
 
+EASYHOOK_NT_INTERNAL LhDisassembleInstruction(void* InPtr, ULONG* length, PSTR buf, LONG buffSize, ULONG64 *nextInstr)
+{
+/*
+Description:
+
+    Takes a pointer to machine code and returns the length and
+    ASM code for the referenced instruction.
+    
+Returns:
+    STATUS_INVALID_PARAMETER
+
+        The given pointer references invalid machine code.
+*/
+    // some exotic instructions might not be supported see the project
+    // at https://github.com/vmt/udis86.
+
+    ud_t ud_obj;
+    ud_init(&ud_obj);
+#ifdef _M_X64
+    ud_set_mode(&ud_obj, 64);
+#else
+    ud_set_mode(&ud_obj, 32);
+#endif
+    ud_set_syntax(&ud_obj, UD_SYN_INTEL);
+    ud_set_asm_buffer(&ud_obj, buf, buffSize);
+    ud_set_input_buffer(&ud_obj, (uint8_t *)InPtr, 32);
+    *length = ud_disassemble(&ud_obj);
+    
+    *nextInstr = (ULONG64)InPtr + *length;
+
+    if(length > 0)
+        return STATUS_SUCCESS;
+    else
+        return STATUS_INVALID_PARAMETER;
+}
+
+EASYHOOK_NT_INTERNAL LhRelocateRIPRelativeInstruction(
+            ULONGLONG InOffset,
+            ULONGLONG InTargetOffset,
+            BOOL* OutWasRelocated)
+{
+/*
+Description:
+
+    Check whether the given instruction is RIP relative and
+    relocates it. If it is not RIP relative, nothing is done.
+    Only applicable to 64-bit processes, 32-bit will always
+    return FALSE.
+
+Parameters:
+
+    - InOffset
+
+        The instruction pointer to check for RIP addressing and relocate.
+
+    - InTargetOffset
+
+        The instruction pointer where the RIP relocation should go to.
+        Please note that RIP relocation are relocated relative to the
+        offset you specify here and therefore are still not absolute!
+
+    - OutWasRelocated
+
+        TRUE if the instruction was RIP relative and has been relocated,
+        FALSE otherwise.
+*/
+
+#ifndef _M_X64
+    return FALSE;
+#else
+    NTSTATUS            NtStatus;
+    CHAR                    Buf[MAX_PATH];
+    ULONG                    AsmSize;
+    ULONG64                    NextInstr;
+    CHAR                    Line[MAX_PATH];
+    LONG                    Pos;
+    LONGLONG                RelAddr;
+    LONGLONG                MemDelta = InTargetOffset - InOffset;
+
+    ASSERT(MemDelta == (LONG)MemDelta,L"reloc.c - MemDelta == (LONG)MemDelta");
+
+    *OutWasRelocated = FALSE;
+
+    // test field...
+    /*BYTE t[10] = {0x8b, 0x05, 0x12, 0x34, 0x56, 0x78};
+    // udis86 outputs: 0000000000000000 8b0512345678     mov eax, [rip+0x78563412]
+
+    InOffset = (LONGLONG)t;
+
+    MemDelta = InTargetOffset - InOffset;
+*/
+
+    // Disassemble the current instruction
+    if(!RTL_SUCCESS(LhDisassembleInstruction((void*)InOffset, &AsmSize, Buf, sizeof(Buf), &NextInstr)))
+        THROW(STATUS_INVALID_PARAMETER_1, L"Unable to disassemble entry point. ");
+    
+    // Check that the address is RIP relative (i.e. look for "[rip+")
+    Pos = RtlAnsiIndexOf(Buf, '[');
+      if(Pos < 0)
+        RETURN;
+
+    if (Buf[Pos + 1] == 'r' && Buf[Pos + 2] == 'i' && Buf[Pos + 3] == 'p' &&  Buf[Pos + 4] == '+')
+    {
+        Pos += 4;
+        // parse content
+        if(RtlAnsiSubString(Buf, Pos + 1, RtlAnsiIndexOf(Buf, ']') - Pos - 1, Line, MAX_PATH) <= 0)
+            RETURN;
+
+        // Convert HEX string to LONG
+        RelAddr = strtol(Line, NULL, 16);
+        if (!RelAddr)
+            RETURN;
+
+        // Verify that we are really RIP relative...
+        if(RelAddr != (LONG)RelAddr)
+            RETURN;
+        // Ensure the RelAddr is equal to the RIP address in code
+        if(*((LONG*)(NextInstr - 4)) != RelAddr)
+            RETURN;
+    
+        /*
+            Relocate this instruction...
+        */
+        // Adjust the relative address
+        RelAddr = RelAddr - MemDelta;
+        // Ensure the RIP address can still be relocated
+        if(RelAddr != (LONG)RelAddr)
+            THROW(STATUS_NOT_SUPPORTED, L"The given entry point contains at least one RIP-Relative instruction that could not be relocated!");
+
+        // Copy instruction to target
+        RtlCopyMemory((void*)InTargetOffset, (void*)InOffset, (ULONG)(NextInstr - InOffset));
+        // Correct the rip address
+        *((LONG*)(InTargetOffset + (NextInstr - InOffset) - 4)) = (LONG)RelAddr;
+
+        *OutWasRelocated = TRUE;
+    }
+
+    RETURN;
+
+THROW_OUTRO:
+FINALLY_OUTRO:
+    return NtStatus;
+#endif
+}
 
 EASYHOOK_NT_INTERNAL LhRelocateEntryPoint(
 				UCHAR* InEntryPoint,
@@ -133,6 +277,8 @@ Parameters:
         To ensure that there is always enough space, you should
         reserve around 100 bytes. After completion this method will
         store the real size in bytes in "OutRelocSize".
+		Important: all instructions using RIP relative addresses will 
+		be relative to the buffer location in memory.
 
     - OutRelocSize
 
@@ -280,13 +426,8 @@ Returns:
 		}
 		else
 		{
-#ifndef DRIVER
-            if(DbgIsEnabled())
-            {
-                // RIP relative detection
-                DbgRelocateRIPRelative((ULONGLONG)pOld, (ULONGLONG)pRes, &IsRIPRelative);
-            }
-#endif
+            // Check for RIP relative instructions and relocate
+            LhRelocateRIPRelativeInstruction((ULONGLONG)pOld, (ULONGLONG)pRes, &IsRIPRelative);
 		}
 
 		// find next instruction
