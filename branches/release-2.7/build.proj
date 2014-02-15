@@ -4,7 +4,7 @@
     <PackageDir>.\Deploy</PackageDir>
     <FX35BuildDir>.\Build\netfx3.5-Release\x64</FX35BuildDir>
     <FX4BuildDir>.\Build\netfx4-Release\x64</FX4BuildDir>
-    <AssemblyCopyright>Copyright &#169; 2013 EasyHook Team</AssemblyCopyright>
+    <AssemblyCopyright>Copyright &#169; 2014 EasyHook Team</AssemblyCopyright>
     <AssemblyTitlePostfix>(beta)</AssemblyTitlePostfix>
   </PropertyGroup>
 
@@ -19,12 +19,15 @@
     <ItemGroup>
       <CppProjectFiles Include=".\**\*.vcxproj" />
     </ItemGroup>
+    <ItemGroup>
+      <CppResourceFiles Include=".\**\*.rc" />
+    </ItemGroup>
     <!-- attempt to record the Subversion Repository revision in SVNRevision for use in AssemblyTitle -->
     <SvnInfo LocalPath="." ContinueOnError="true">
       <Output TaskParameter="Revision" PropertyName="SVNRevision" />
     </SvnInfo>
     <Message Text="Repository Revision: $(SVNRevision)"/>
-    <CreateProperty Value=" $(AssemblyTitlePostfix) - r$(SVNRevision)" Condition="'$(SVNRevision)'!=''">
+    <CreateProperty Value="$(AssemblyTitlePostfix) - r$(SVNRevision)" Condition="'$(SVNRevision)'!=''">
       <Output TaskParameter="Value" PropertyName="AssemblyTitlePostfix" />
     </CreateProperty>
     <!-- Increment Version number in Version.txt -->
@@ -43,13 +46,31 @@
       ReplacementText="$(Major).$(Minor).$(Build).$(Revision)" />
     <FileUpdate Files="@(AssemblyInfoFiles)"
       Regex="AssemblyTitle\(&quot;(.*)&quot;\)"
-      ReplacementText="AssemblyTitle(&quot;$1$(AssemblyTitlePostfix)&quot;)" />
+      ReplacementText="AssemblyTitle(&quot;$1 $(AssemblyTitlePostfix)&quot;)" />
     <FileUpdate Files="@(AssemblyInfoFiles)"
       Regex="AssemblyCopyright\(.*\)"
       ReplacementText="AssemblyCopyright(&quot;$(AssemblyCopyright)&quot;)" />
     <FileUpdate Files="@(CppProjectFiles)"
       Regex="&lt;Version&gt;.*&lt;/Version&gt;"
       ReplacementText="&lt;Version&gt;$(Major).$(Minor).$(Build).$(Revision)&lt;/Version&gt;" />
+    <FileUpdate Files="@(CppResourceFiles)" Encoding="Windows-1252"
+      Regex="FILEVERSION .,.,.,."
+      ReplacementText="FILEVERSION $(Major),$(Minor),$(Build),$(Revision)" />
+    <FileUpdate Files="@(CppResourceFiles)" Encoding="Windows-1252"
+      Regex="PRODUCTVERSION .,.,.,."
+      ReplacementText="PRODUCTVERSION $(Major),$(Minor),$(Build),$(Revision)" />
+    <FileUpdate Files="@(CppResourceFiles)" Encoding="Windows-1252"
+      Regex="&quot;LegalCopyright&quot;, &quot;.*&quot;"
+      ReplacementText="&quot;LegalCopyright&quot;, &quot;$(AssemblyCopyright)&quot;" />
+    <FileUpdate Files="@(CppResourceFiles)" Encoding="Windows-1252"
+      Regex="&quot;FileDescription&quot;, &quot;(.*)&quot;"
+      ReplacementText="&quot;FileDescription&quot;, &quot;$1 $(AssemblyTitlePostfix)&quot;" />
+    <FileUpdate Files="@(CppResourceFiles)" Encoding="Windows-1252"
+      Regex="&quot;FileVersion&quot;, &quot;.*&quot;"
+      ReplacementText="&quot;FileVersion&quot;, &quot;$(Major).$(Minor).$(Build).$(Revision)&quot;" />
+    <FileUpdate Files="@(CppResourceFiles)" Encoding="Windows-1252"
+      Regex="&quot;ProductVersion&quot;, &quot;.*&quot;"
+      ReplacementText="&quot;ProductVersion&quot;, &quot;$(Major).$(Minor).$(Build).$(Revision)&quot;" />
   </Target>
 
   <!-- Build all binaries -->
