@@ -59,8 +59,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,7,5159,3
- PRODUCTVERSION 2,7,5159,3
+ FILEVERSION 2,7,0,0
+ PRODUCTVERSION 2,7,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -77,12 +77,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "easyhook.codeplex.com"
             VALUE "FileDescription", "EasyHook Native DLL (64-bit)"
-            VALUE "FileVersion", "2.7.5159.6"
+            VALUE "FileVersion", "2.7.0.0"
             VALUE "InternalName", "EasyHook64.dll"
             VALUE "LegalCopyright", "Copyright © 2014 EasyHook Team"
             VALUE "OriginalFilename", "EasyHook64.dll"
             VALUE "ProductName", "EasyHook"
-            VALUE "ProductVersion", "2.7.5159.6"
+            VALUE "ProductVersion", "2.7.0.0"
         END
     END
     BLOCK "VarFileInfo"
