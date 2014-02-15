@@ -204,7 +204,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x64\EasyHook32.dll"</Command>
@@ -237,7 +236,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x64\EasyHook32.dll"</Command>
@@ -272,7 +270,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x86\EasyHook64.dll"</Command>
@@ -307,7 +304,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x86\EasyHook64.dll"</Command>
@@ -346,7 +342,6 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x64\EasyHook32.dll"</Command>
@@ -386,7 +381,6 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x64\EasyHook32.dll"</Command>
@@ -427,7 +421,6 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x86\EasyHook64.dll"</Command>
@@ -468,7 +461,6 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
-      <Version>2.7</Version>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(TargetDir)..\x86\EasyHook64.dll"</Command>
@@ -677,6 +669,7 @@ ml.exe /D_WIN32 /c /Cx "%(FullPath)"
     <ClInclude Include="..\Public\easyhook.h" />
     <ClInclude Include="ntstatus.h" />
     <ClInclude Include="..\DriverShared\rtl.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -688,6 +681,12 @@ ml.exe /D_WIN32 /c /Cx "%(FullPath)"
       <Project>{ab53862b-3b5c-4efc-9787-1f01199ebfbf}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='Win32'" >
+    <ResourceCompile Include="EasyHookDll_32.rc" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='x64'" >
+    <ResourceCompile Include="EasyHookDll_64.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -145,6 +145,9 @@
     <ClInclude Include="..\DriverShared\Disassembler\libudis86\types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\DriverShared\ASM\HookSpecific_x86.asm">
@@ -153,5 +156,13 @@
     <MASM Include="..\DriverShared\ASM\HookSpecific_x64.asm">
       <Filter>Source Files\ASM</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="EasyHookDll_64.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="EasyHookDll_32.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
