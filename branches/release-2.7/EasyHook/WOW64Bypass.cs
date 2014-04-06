@@ -39,6 +39,18 @@ namespace EasyHook
         {
             lock (ThreadSafe)
             {
+                // Ensure we create a new one if the existing
+                // channel cannot be pinged
+                try
+                {
+                    if (m_Interface != null)
+                        m_Interface.Ping();
+                }
+                catch
+                {
+                    m_Interface = null;
+                }
+
                 if (m_Interface == null)
                 {
                     String ChannelName = RemoteHooking.GenerateName();
