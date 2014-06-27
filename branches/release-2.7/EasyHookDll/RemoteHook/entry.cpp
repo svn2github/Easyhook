@@ -40,6 +40,13 @@ typedef HRESULT __stdcall PROC_CLRCreateInstance(
     LPVOID * ppInterface
 );
 
+// Alternative method to load the .NET framework
+typedef HRESULT __stdcall PROC_UserLibraryLoad(
+	LPCWSTR param
+);
+// Allows notification for unloading injected managed target
+typedef void __stdcall PROC_UserLibraryClose();
+
 // a macro to compress error information...
 #define UNMANAGED_ERROR(code) {ErrorCode = ((code) & 0xFF) | 0xF0000000; goto ABORT_ERROR;}
 
@@ -105,6 +112,14 @@ Description:
 
     Loads the NET runtime into the calling process and invokes the
     managed injection entry point (EasyHook.InjectionLoader.Main).
+
+    If InInfo->UserLibrary provides Load/Close exports then these
+    will be called to initiate .NET rather than manually loading
+    the framework. This provides a more reliable approach and
+    greater control over the .NET Framework version that is loaded.
+    
+    The EasyLoad32 and EasyLoad64 .NET assemblies provide these 
+    exports.
 */
     ICLRMetaHost*           MetaClrHost = NULL;
     ICLRRuntimeInfo*        RuntimeInfo = NULL;
@@ -113,144 +128,196 @@ Description:
 	DWORD					ErrorCode = 0;
     WCHAR                   ParamString[MAX_PATH];
     REMOTE_ENTRY_INFO       EntryInfo;
-    HMODULE                 hMsCorEE = LoadLibraryA("mscoree.dll");
-    PROC_CorBindToRuntime*  CorBindToRuntime = (PROC_CorBindToRuntime*)GetProcAddress(hMsCorEE, "CorBindToRuntime"); // .NET 2.0/3.5 framework creation method
-    PROC_CLRCreateInstance* CLRCreateInstance = (PROC_CLRCreateInstance*)GetProcAddress(hMsCorEE, "CLRCreateInstance"); // .NET 4.0+ framework creation method
+
+    // Support for loading EasyLoad32/64.dll
+    HMODULE					userLib = LoadLibraryW(InInfo->UserLibrary);
+	PROC_UserLibraryLoad*	userLibLoad = NULL;
+    PROC_UserLibraryClose*  userLibClose = NULL;
+
+    HMODULE                 hMsCorEE = NULL;
+    PROC_CorBindToRuntime*  CorBindToRuntime = NULL; // .NET 2.0/3.5 framework creation method
+    PROC_CLRCreateInstance* CLRCreateInstance = NULL; // .NET 4.0+ framework creation method
     DWORD                   RetVal;
     bool                    UseCorBindToRuntime = false;
 
-    if(CorBindToRuntime == NULL && CLRCreateInstance == NULL)
-        UNMANAGED_ERROR(10); // mscoree.dll does not exist or does not expose either of the framework creation methods
+	// invoke user defined entry point
+	EntryInfo.HostPID = InInfo->HostProcess;
+	EntryInfo.UserData = InInfo->UserData;
+	EntryInfo.UserDataSize = InInfo->UserDataSize;
 
-    UseCorBindToRuntime = CLRCreateInstance == NULL;
-
-    // invoke user defined entry point
-    EntryInfo.HostPID = InInfo->HostProcess;
-    EntryInfo.UserData = InInfo->UserData;
-    EntryInfo.UserDataSize = InInfo->UserDataSize;
-
-    if (!UseCorBindToRuntime)
+	// Attempt to load userLib Load export for preparing the .NET environment
+    // NOTE: the framework version that userLib (usually EasyLoad32/64.dll) is compiled
+    //       with is the version that will be initialised.
+    if (userLib != NULL)
     {
-        // Attempt to use .NET 3.5/4 runtime object creation method rather than deprecated .NET 2.0 CorBindToRuntime
-        if (FAILED(CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost, (LPVOID*)&MetaClrHost)))
-        {
-            // Failed to get a MetaHost instance
-            DEBUGOUT("Failed to retrieve CLRMetaHost instance");
-            UseCorBindToRuntime = true;
-        }
-        else
-        {
-            /*
-                It is possible to create a ICLRRuntimeInfo object based on the runtime required by InInfo->UserLibrary
-                however this requires that the assembly containing the "EasyHook.InjectionLoader" (usually EasyHook.dll)
-                must be targetting the same framework version as the assembly(ies) to be injected. This is because the
-                first CLR assembly injected into the target process in this case is usually the EasyHook.dll assembly.
-
-                So instead we are providing a specific .NET version (for now v4.0.30319), this will need to be
-                passed as a parameter in the future.
-            */
-            // TODO: add documentation about what happens when injecting into a managed process where the .NET framework is already loaded
-            LPCWSTR frameworkVersion = L"v4.0.30319"; // TODO: .NET version string to be passed in "InInfo"
-            if (FAILED(MetaClrHost->GetRuntime(
-                frameworkVersion, 
-                IID_ICLRRuntimeInfo,
-                (LPVOID*)&RuntimeInfo)))
-            {
-                // .NET version requested is not available
-                DEBUGOUT("Failed to retrieve runtime info for framework version: %s", frameworkVersion);
-                UseCorBindToRuntime = true;
-            }
-            else
-            {
-                if (FAILED(RuntimeInfo->GetInterface(CLSID_CLRRuntimeHost, IID_ICLRRuntimeHost, (LPVOID*)&RuntimeClrHost)))
-                {
-                    // Failed to create the requested CLR host version
-                    // TODO: add documentation about why this might happen - e.g. does this happen if an older framework version is already loaded by the target?
-                    DEBUGOUT("Failed to create CLR host for framework version: %s", frameworkVersion);
-                    UseCorBindToRuntime = true;
-                }
-                else
-                {
-                    RuntimeClrHost->Start();
-
-                    // Enable support for running older .NET v2 assemblies within .NET v4 (e.g. EasyHook.dll is .NET 2.0)
-	                if (FAILED(RuntimeInfo->BindAsLegacyV2Runtime()))
-                        DEBUGOUT("Unable to BindAsLegacyV2Runtime");
-                }
-            }
-        }
+		userLibLoad = (PROC_UserLibraryLoad*)GetProcAddress(userLib, "Load");
+        userLibClose = (PROC_UserLibraryClose*)GetProcAddress(userLib, "Close");
     }
+	if (userLibLoad != NULL)
+	{
+        // The userLib provides the Load export so use it to initialise .NET
+        // NOTE: The first call to userLibLoad simply intialises the IPC channel
+        //       used by EasyHook to confirm the injection. The target assembly
+        //       is not loaded here, but within the second call.
+		RtlLongLongToUnicodeHex((LONGLONG)&EntryInfo, ParamString);
+        if(!RTL_SUCCESS(RetVal = userLibLoad(ParamString)))
+		{
+			DEBUGOUT("Failed to call Loader.Load");
+			UNMANAGED_ERROR(15);
+		}
 
-    if (UseCorBindToRuntime)
-    {
-        // load NET-Runtime and execute user defined method
-        if(!RTL_SUCCESS(CorBindToRuntime(NULL, NULL, CLSID_CLRRuntimeHost, IID_ICLRRuntimeHost, (void**)&RuntimeClrHost)))
-        {
-            DEBUGOUT("CorBindToRuntime failed");
-            UNMANAGED_ERROR(11);
-        }
+		// Set and close event, the host will now stop waiting for the injection to complete
+		if(!SetEvent(InInfo->hRemoteSignal))
+			UNMANAGED_ERROR(22);
+		CloseHandle(InInfo->hRemoteSignal);
+		InInfo->hRemoteSignal = NULL;
+
+		// This is the second call that providing the IPC channel was successfully
+        // initiated, will load the target assembly and call the matching Run method
+        // on the IEntryPoint.
+        userLibLoad(ParamString);
+
+        // If the library implements a clean-up method, call it
+        if (userLibClose != NULL)
+            userLibClose();
+	}
+    // Backup method of manually preparing the .NET environment
+	else // useLibLoad == NULL
+	{
+        hMsCorEE = LoadLibraryA("mscoree.dll");
+        CorBindToRuntime = (PROC_CorBindToRuntime*)GetProcAddress(hMsCorEE, "CorBindToRuntime"); // .NET 2.0/3.5 framework creation method
+        CLRCreateInstance = (PROC_CLRCreateInstance*)GetProcAddress(hMsCorEE, "CLRCreateInstance"); // .NET 4.0+ framework creation method
+
+
+		if(CorBindToRuntime == NULL && CLRCreateInstance == NULL)
+			UNMANAGED_ERROR(10); // mscoree.dll does not exist or does not expose either of the framework creation methods
+
+		UseCorBindToRuntime = CLRCreateInstance == NULL;
+
+		if (!UseCorBindToRuntime)
+		{
+			// Attempt to use .NET 3.5/4 runtime object creation method rather than deprecated .NET 2.0 CorBindToRuntime
+			if (FAILED(CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost, (LPVOID*)&MetaClrHost)))
+			{
+				// Failed to get a MetaHost instance
+				DEBUGOUT("Failed to retrieve CLRMetaHost instance");
+				UseCorBindToRuntime = true;
+			}
+			else
+			{
+				/*
+					It is possible to create a ICLRRuntimeInfo object based on the runtime required by InInfo->UserLibrary
+					however this requires that the assembly containing the "EasyHook.InjectionLoader" (usually EasyHook.dll)
+					must be targetting the same framework version as the assembly(ies) to be injected. This is because the
+					first CLR assembly injected into the target process in this case is usually the EasyHook.dll assembly.
+
+					So instead we are providing a specific .NET version (for now v4.0.30319), this will need to be
+					passed as a parameter in the future.
+				*/
+				// TODO: add documentation about what happens when injecting into a managed process where the .NET framework is already loaded
+				LPCWSTR frameworkVersion = L"v4.0.30319"; // TODO: .NET version string to be passed in "InInfo"
+				if (FAILED(MetaClrHost->GetRuntime(
+					frameworkVersion, 
+					IID_ICLRRuntimeInfo,
+					(LPVOID*)&RuntimeInfo)))
+				{
+					// .NET version requested is not available
+					DEBUGOUT("Failed to retrieve runtime info for framework version: %s", frameworkVersion);
+					UseCorBindToRuntime = true;
+				}
+				else
+				{
+					if (FAILED(RuntimeInfo->GetInterface(CLSID_CLRRuntimeHost, IID_ICLRRuntimeHost, (LPVOID*)&RuntimeClrHost)))
+					{
+						// Failed to create the requested CLR host version
+						// TODO: add documentation about why this might happen - e.g. does this happen if an older framework version is already loaded by the target?
+						DEBUGOUT("Failed to create CLR host for framework version: %s", frameworkVersion);
+						UseCorBindToRuntime = true;
+					}
+					else
+					{
+						RuntimeClrHost->Start();
+
+						// Enable support for running older .NET v2 assemblies within .NET v4 (e.g. EasyHook.dll is .NET 2.0)
+						if (FAILED(RuntimeInfo->BindAsLegacyV2Runtime()))
+							DEBUGOUT("Unable to BindAsLegacyV2Runtime");
+					}
+				}
+			}
+		}
+
+		if (UseCorBindToRuntime)
+		{
+			// load NET-Runtime and execute user defined method
+			if(!RTL_SUCCESS(CorBindToRuntime(NULL, NULL, CLSID_CLRRuntimeHost, IID_ICLRRuntimeHost, (void**)&RuntimeClrHost)))
+			{
+				DEBUGOUT("CorBindToRuntime failed");
+				UNMANAGED_ERROR(11);
+			}
         
-        RuntimeClrHost->Start();
-    }
+			RuntimeClrHost->Start();
+		}
 
-    /*
-        Test library code.
-        This is because if once we have set the remote signal, there is no way to
-        notify the host about errors. If the following call succeeds, then it will
-        also do so some lines later... If not, then we are still able to report an error.
+		/*
+			Test library code.
+			This is because if once we have set the remote signal, there is no way to
+			notify the host about errors. If the following call succeeds, then it will
+			also do so some lines later... If not, then we are still able to report an error.
 
-        The EasyHook managed injection loader will establish a connection to the
-        host, so that further error reporting is still possible after we set the event!
-    */
-    RtlLongLongToUnicodeHex((LONGLONG)&EntryInfo, ParamString);
+			The EasyHook managed injection loader will establish a connection to the
+			host, so that further error reporting is still possible after we set the event!
+		*/
+		RtlLongLongToUnicodeHex((LONGLONG)&EntryInfo, ParamString);
 
-    if(!RTL_SUCCESS(RuntimeClrHost->ExecuteInDefaultAppDomain(
-            InInfo->UserLibrary,
-            L"EasyHook.InjectionLoader",
-            L"Main",
-            ParamString,
-            &RetVal)))
-    {
-        if (UseCorBindToRuntime)
-            UNMANAGED_ERROR(12); // We already tried the CorBindToRuntime method and it has failed
+		if(!RTL_SUCCESS(RuntimeClrHost->ExecuteInDefaultAppDomain(
+				InInfo->UserLibrary,
+				L"EasyHook.InjectionLoader",
+				L"Main",
+				ParamString,
+				&RetVal)))
+		{
+			if (UseCorBindToRuntime)
+				UNMANAGED_ERROR(12); // We already tried the CorBindToRuntime method and it has failed
 
-        // Running the assembly in the .NET 4.0 Runtime did not work;
-        // Stop and attempt to run it in the .NET 2.0/3.5 Runtime
-        if(RuntimeClrHost != NULL)
-            RuntimeClrHost->Release();
+			// Running the assembly in the .NET 4.0 Runtime did not work;
+			// Stop and attempt to run it in the .NET 2.0/3.5 Runtime
+			if(RuntimeClrHost != NULL)
+				RuntimeClrHost->Release();
         
-        if(!RTL_SUCCESS(CorBindToRuntime(NULL, NULL, CLSID_CLRRuntimeHost, IID_ICLRRuntimeHost, (void**)&RuntimeClrHost)))
-            UNMANAGED_ERROR(11);
+			if(!RTL_SUCCESS(CorBindToRuntime(NULL, NULL, CLSID_CLRRuntimeHost, IID_ICLRRuntimeHost, (void**)&RuntimeClrHost)))
+				UNMANAGED_ERROR(11);
         
-        RuntimeClrHost->Start();
+			RuntimeClrHost->Start();
         
-        RtlLongLongToUnicodeHex((LONGLONG)&EntryInfo, ParamString);
-        if(!RTL_SUCCESS(RuntimeClrHost->ExecuteInDefaultAppDomain(InInfo->UserLibrary, L"EasyHook.InjectionLoader", L"Main", ParamString, &RetVal)))
-            UNMANAGED_ERROR(14); // Execution under both .NET 4 and .NET 2/3.5 failed (new ErrorCode: 14, for EasyHook 2.7)
-    }
+			RtlLongLongToUnicodeHex((LONGLONG)&EntryInfo, ParamString);
+			if(!RTL_SUCCESS(RuntimeClrHost->ExecuteInDefaultAppDomain(InInfo->UserLibrary, L"EasyHook.InjectionLoader", L"Main", ParamString, &RetVal)))
+				UNMANAGED_ERROR(14); // Execution under both .NET 4 and .NET 2/3.5 failed (new ErrorCode: 14, for EasyHook 2.7)
+		}
 
-    if(!RetVal)
-        UNMANAGED_ERROR(13);
+		if(!RetVal)
+			UNMANAGED_ERROR(13);
 
-    // set and close event
-    if(!SetEvent(InInfo->hRemoteSignal))
-        UNMANAGED_ERROR(22);
+		// set and close event
+		if(!SetEvent(InInfo->hRemoteSignal))
+			UNMANAGED_ERROR(22);
 
-    CloseHandle(InInfo->hRemoteSignal);
+		CloseHandle(InInfo->hRemoteSignal);
 
-    InInfo->hRemoteSignal = NULL;
+		InInfo->hRemoteSignal = NULL;
 
-    // execute library code (no way for error reporting, so we dont need to check)
-    RuntimeClrHost->ExecuteInDefaultAppDomain(
-        InInfo->UserLibrary,
-        L"EasyHook.InjectionLoader",
-        L"Main",
-        ParamString,
-        &RetVal);
-
+		// execute library code (no way for error reporting, so we dont need to check)
+        RuntimeClrHost->ExecuteInDefaultAppDomain(
+			InInfo->UserLibrary,
+			L"EasyHook.InjectionLoader",
+			L"Main",
+			ParamString,
+			&RetVal);
+	}
 ABORT_ERROR:
 
     // release resources
+    if (userLib != NULL)
+        FreeLibrary(userLib);
     if(MetaClrHost != NULL)
         MetaClrHost->Release();
     if(RuntimeInfo  != NULL)
