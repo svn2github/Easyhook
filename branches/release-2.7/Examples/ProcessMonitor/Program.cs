@@ -14,21 +14,23 @@ namespace ProcessMonitor
         [STAThread]
         static void Main()
         {
-            bool noGAC = false;
-            try
-            {
-                Config.Register(
-                    "A simple ProcessMonitor based on EasyHook!",
-                    "ProcMonInject.dll",
-                    "ProcessMonitor.exe");
-            }
-            catch (ApplicationException)
-            {
-                MessageBox.Show("This is an administrative task! Attempting without GAC...", "Permission denied...", MessageBoxButtons.OK);
+            // Default to not using the GAC
+            bool noGAC = true;
 
-                noGAC = true;
-                //System.Diagnostics.Process.GetCurrentProcess().Kill();
-            }
+            //try
+            //{
+            //    Config.Register(
+            //        "A simple ProcessMonitor based on EasyHook!",
+            //        "ProcMonInject.dll",
+            //        "ProcessMonitor.exe");
+            //}
+            //catch (ApplicationException)
+            //{
+            //    MessageBox.Show("This is an administrative task! Attempting without GAC...", "Permission denied...", MessageBoxButtons.OK);
+
+            //    noGAC = true;
+            //    //System.Diagnostics.Process.GetCurrentProcess().Kill();
+            //}
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

@@ -40,45 +40,62 @@ namespace FileMon
         static void Main(string[] args)
         {
             Int32 TargetPID = 0;
+            string targetExe = null;
 
-            if ((args.Length != 1) || !Int32.TryParse(args[0], out TargetPID))
+            // Load the parameter
+            while ((args.Length != 1) || !Int32.TryParse(args[0], out TargetPID) || !File.Exists(args[0]))
             {
-                Console.WriteLine();
-                Console.WriteLine("Usage: FileMon %PID%");
-                Console.WriteLine();
+                if (TargetPID > 0)
+                {
+                    break;
+                }
+                if (args.Length != 1 || !File.Exists(args[0]))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Usage: FileMon %PID%");
+                    Console.WriteLine("   or: FileMon PathToExecutable");
+                    Console.WriteLine();
+                    Console.Write("Please enter a process Id or path to executable: ");
 
-                return;
+                    args = new string[] { Console.ReadLine() };
+
+                    if (String.IsNullOrEmpty(args[0])) return;
+                }
+                else
+                {
+                    targetExe = args[0];
+                    break;
+                }
             }
 
             try
             {
-                try
-                {
-                    Config.Register(
-                        "A FileMon like demo application.",
-                        "FileMon.exe",
-                        "FileMonInject.dll");
-                }
-                catch (ApplicationException)
-                {
-                    MessageBox.Show("This is an administrative task!", "Permission denied...", MessageBoxButtons.OK);
-
-                    System.Diagnostics.Process.GetCurrentProcess().Kill();
-                }
-
                 RemoteHooking.IpcCreateServer<FileMonInterface>(ref ChannelName, WellKnownObjectMode.SingleCall);
-                
-                RemoteHooking.Inject(
-                    TargetPID,
-                    "FileMonInject.dll",
-                    "FileMonInject.dll",
-                    ChannelName);
-                
-                Console.ReadLine();
+
+                string injectionLibrary = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "FileMonInject.dll");
+                if (String.IsNullOrEmpty(targetExe))
+                {
+                    RemoteHooking.Inject(
+                        TargetPID,
+                        injectionLibrary,
+                        injectionLibrary,
+                        ChannelName);
+
+                    Console.WriteLine("Injected to process {0}", TargetPID);
+                }
+                else
+                {
+                    RemoteHooking.CreateAndInject(targetExe, "", 0, InjectionOptions.DoNotRequireStrongName, injectionLibrary, injectionLibrary, out TargetPID, ChannelName);
+                    Console.WriteLine("Created and injected process {0}", TargetPID);
+                }
+                Console.WriteLine("<Press any key to exit>");
+                Console.ReadKey();
             }
             catch (Exception ExtInfo)
             {
                 Console.WriteLine("There was an error while connecting to target:\r\n{0}", ExtInfo.ToString());
+                Console.WriteLine("<Press any key to exit>");
+                Console.ReadKey();
             }
         }
     }
