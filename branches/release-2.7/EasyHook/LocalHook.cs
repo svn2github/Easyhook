@@ -747,6 +747,9 @@ namespace EasyHook
             Result.m_Handle = Marshal.AllocCoTaskMem(IntPtr.Size);
             Result.m_SelfHandle = GCHandle.Alloc(Result, GCHandleType.Weak);
 
+            // workitem/13695 & workitem/25580
+            Marshal.WriteIntPtr(Result.m_Handle, IntPtr.Zero);
+
             try
             {
                 NativeAPI.LhInstallHook(
