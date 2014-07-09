@@ -130,7 +130,7 @@ Description:
     REMOTE_ENTRY_INFO       EntryInfo;
 
     // Support for loading EasyLoad32/64.dll
-    HMODULE					userLib = LoadLibraryW(InInfo->UserLibrary);
+    HMODULE					userLib = GetModuleHandleW(InInfo->UserLibrary);
 	PROC_UserLibraryLoad*	userLibLoad = NULL;
     PROC_UserLibraryClose*  userLibClose = NULL;
 
@@ -144,6 +144,12 @@ Description:
 	EntryInfo.HostPID = InInfo->HostProcess;
 	EntryInfo.UserData = InInfo->UserData;
 	EntryInfo.UserDataSize = InInfo->UserDataSize;
+
+    // If library is not already loaded (GetModuleHandleW) then try to load it
+    if (userLib == NULL)
+    {
+        userLib = LoadLibraryW(InInfo->UserLibrary);
+    }
 
 	// Attempt to load userLib Load export for preparing the .NET environment
     // NOTE: the framework version that userLib (usually EasyLoad32/64.dll) is compiled
@@ -316,8 +322,14 @@ Description:
 ABORT_ERROR:
 
     // release resources
-    if (userLib != NULL)
-        FreeLibrary(userLib);
+    // We do not unload userLib as it is a .NET assembly
+	// and cannot be completely unloaded due to the CLR
+	// maintaining a reference to it.
+	// Trying to free the library will result in subsequent
+	// injections to the same process failing (usually by the
+	// third attempt)
+    //if (userLib != NULL)
+    //    FreeLibrary(userLib);
     if(MetaClrHost != NULL)
         MetaClrHost->Release();
     if(RuntimeInfo  != NULL)
