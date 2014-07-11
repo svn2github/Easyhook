@@ -175,27 +175,30 @@ Parameters:
     return FALSE;
 #else
     NTSTATUS            NtStatus;
-    CHAR                    Buf[MAX_PATH];
-    ULONG                    AsmSize;
-    ULONG64                    NextInstr;
-    CHAR                    Line[MAX_PATH];
-    LONG                    Pos;
-    LONGLONG                RelAddr;
-    LONGLONG                MemDelta = InTargetOffset - InOffset;
+    CHAR                Buf[MAX_PATH];
+    ULONG               AsmSize;
+    ULONG64             NextInstr;
+    CHAR                Line[MAX_PATH];
+    LONG                Pos;
+    LONGLONG            RelAddr;
+    LONGLONG            MemDelta = InTargetOffset - InOffset;
+
+	ULONGLONG           RelAddrOffset = 0;
+    LONGLONG            RelAddrSign = 1;
 
     ASSERT(MemDelta == (LONG)MemDelta,L"reloc.c - MemDelta == (LONG)MemDelta");
 
     *OutWasRelocated = FALSE;
 
     // test field...
-    /*BYTE t[10] = {0x8b, 0x05, 0x12, 0x34, 0x56, 0x78};
+    /*
+    BYTE t[10] = {0x8b, 0x05, 0x12, 0x34, 0x56, 0x78};
     // udis86 outputs: 0000000000000000 8b0512345678     mov eax, [rip+0x78563412]
 
     InOffset = (LONGLONG)t;
 
     MemDelta = InTargetOffset - InOffset;
-*/
-
+    */
     // Disassemble the current instruction
     if(!RTL_SUCCESS(LhDisassembleInstruction((void*)InOffset, &AsmSize, Buf, sizeof(Buf), &NextInstr)))
         THROW(STATUS_INVALID_PARAMETER_1, L"Unable to disassemble entry point. ");
@@ -205,8 +208,21 @@ Parameters:
       if(Pos < 0)
         RETURN;
 
-    if (Buf[Pos + 1] == 'r' && Buf[Pos + 2] == 'i' && Buf[Pos + 3] == 'p' &&  Buf[Pos + 4] == '+')
+    if (Buf[Pos + 1] == 'r' && Buf[Pos + 2] == 'i' && Buf[Pos + 3] == 'p' &&  (Buf[Pos + 4] == '+' || Buf[Pos + 4] == '-'))
     {
+        /*
+          Support negative relative addresses
+          
+          https://easyhook.codeplex.com/workitem/25592
+            e.g. Win8.1 64-bit OLEAUT32.dll!VarBoolFromR8
+            Entry Point:
+              66 0F 2E 05 DC 25 FC FF   ucomisd xmm0, [rip-0x3da24]   IP:ffc46d4
+            Relocated:
+              66 0F 2E 05 10 69 F6 FF   ucomisd xmm0, [rip-0x996f0]   IP:100203a0
+        */
+        if (Buf[Pos + 4] == '-')
+            RelAddrSign = -1;
+        
         Pos += 4;
         // parse content
         if(RtlAnsiSubString(Buf, Pos + 1, RtlAnsiIndexOf(Buf, ']') - Pos - 1, Line, MAX_PATH) <= 0)
@@ -217,14 +233,42 @@ Parameters:
         if (!RelAddr)
             RETURN;
 
-        // Verify that we are really RIP relative...
+        // Apply correct sign
+        RelAddr *= RelAddrSign;
+
+        // Verify that we are really RIP relative (i.e. must be 32-bit)
         if(RelAddr != (LONG)RelAddr)
             RETURN;
-        // Ensure the RelAddr is equal to the RIP address in code
-        if(*((LONG*)(NextInstr - 4)) != RelAddr)
-            RETURN;
-    
+        
         /*
+          Ensure the RelAddr is equal to the RIP address in code
+         
+          https://easyhook.codeplex.com/workitem/25487
+		  Thanks to Michal for pointing out that the operand will not always 
+          be at *(NextInstr - 4)
+		  e.g. Win8.1 64-bit OLEAUT32.dll!GetVarConversionLocaleSetting 
+              Entry Point:
+                 83 3D 71 08 06 00 00    cmp dword [rip+0x60871], 0x0  IP:ffa1937
+              Relocated:
+                 83 3D 09 1E 0B 00 00    cmp dword [rip+0xb1e09], 0x0  IP:ff5039f
+        */
+		for (Pos = 1; Pos <= NextInstr - InOffset - 4; Pos++) {
+			if (*((LONG*)(InOffset + Pos)) == RelAddr) {
+				if (RelAddrOffset != 0) {
+					// More than one offset matches the address, therefore we can't determine correct offset for operand
+                    RelAddrOffset = 0;  
+                    break;
+				}
+
+				RelAddrOffset = Pos;
+			}
+		}
+
+		if (RelAddrOffset == 0) {
+			THROW(STATUS_INTERNAL_ERROR, L"The given entry point contains a RIP-relative instruction for which we can't determine the correct address offset!");
+		}
+
+		/*
             Relocate this instruction...
         */
         // Adjust the relative address
@@ -236,7 +280,7 @@ Parameters:
         // Copy instruction to target
         RtlCopyMemory((void*)InTargetOffset, (void*)InOffset, (ULONG)(NextInstr - InOffset));
         // Correct the rip address
-        *((LONG*)(InTargetOffset + (NextInstr - InOffset) - 4)) = (LONG)RelAddr;
+        *((LONG*)(InTargetOffset + RelAddrOffset)) = (LONG)RelAddr;
 
         *OutWasRelocated = TRUE;
     }
@@ -298,7 +342,7 @@ Returns:
 	UCHAR			    b2;
 	ULONG			    OpcodeLen;
 	POINTER_TYPE   	    AbsAddr;
-	BOOL			    a16;
+	BOOL			    a16 = FALSE;
 	BOOL			    IsRIPRelative;
     ULONG               InstrLen;
     NTSTATUS            NtStatus;
@@ -311,13 +355,23 @@ Returns:
 		b2 = *(pOld + 1);
 		OpcodeLen = 0;
 		AbsAddr = 0;
-		a16 = FALSE;
 		IsRIPRelative = FALSE;
 
 		// check for prefixes
 		switch(b1)
 		{
-		case 0x67: a16 = TRUE; continue;
+            case 0x67: // address-size override prefix
+    			// TODO: this implementation does not take into consideration all scenarios
+                //       e.g. http://wiki.osdev.org/X86-64_Instruction_Encoding#Operand-size_and_address-size_override_prefix
+                a16 = TRUE; 
+                // We increment pOld to skip this prefix, pOld is then decremented 
+                // if the instruction is to be copied unchanged.
+				pOld++;
+				continue;
+            /*
+                Don't need to do anything with 0x66 (operand/data-size prefix), we only need to know when an address-size override prefix is present.
+                Instructions with 0x66 generally end up unchanged (except 64-bit rip relative addresses where we only adjust the address anyway)
+            */
 		}
 
 		/////////////////////////////////////////////////////////
@@ -336,7 +390,7 @@ Returns:
 				
 				// ATTENTION: will continue in "case 0xE8"
 			}
-		case 0xE8: // call imm16/imm32
+			case 0xE8: // call imm16/imm32
 			{
 				if(a16)
 				{
@@ -350,7 +404,7 @@ Returns:
 				}
 			}break;
 
-        case 0xEB: // jmp imm8
+        	case 0xEB: // jmp imm8
             {
                 AbsAddr = *((__int8*)(pOld + 1));
                 OpcodeLen = 2;
@@ -361,11 +415,11 @@ Returns:
 			application to remain in an unstable state. Only near jumps with 32-bit offset are allowed as
 			first instruction (see above)...
 		*/
-		case 0xE3: // jcxz imm8
+			case 0xE3: // jcxz imm8
 			{
 				THROW(STATUS_NOT_SUPPORTED, L"Hooking near (conditional) jumps is not supported.");
 			}break;
-		case 0x0F:
+			case 0x0F:
 			{
 				if((b2 & 0xF0) == 0x80) // jcc imm16/imm32
 					THROW(STATUS_NOT_SUPPORTED,  L"Hooking far conditional jumps is not supported.");
@@ -385,9 +439,8 @@ Returns:
 #ifdef _M_X64
 			*(pRes++) = 0x48; // REX.W-Prefix
 #endif
-			*(pRes++) = 0xB8;
-
-			*((LONGLONG*)pRes) = AbsAddr;
+			*(pRes++) = 0xB8;               // mov eax,
+			*((LONGLONG*)pRes) = AbsAddr;   //          address
 
 			pRes += sizeof(void*);
 
@@ -427,8 +480,11 @@ Returns:
 		else
 		{
             // Check for RIP relative instructions and relocate
-            LhRelocateRIPRelativeInstruction((ULONGLONG)pOld, (ULONGLONG)pRes, &IsRIPRelative);
+            FORCE(LhRelocateRIPRelativeInstruction((ULONGLONG)pOld, (ULONGLONG)pRes, &IsRIPRelative));
 		}
+
+		// If 16-bit address-prefix override, move pointer back to start of instruction
+		if (a16) pOld--;
 
 		// find next instruction
 		FORCE(InstrLen = LhGetInstructionLength(pOld));
@@ -444,6 +500,7 @@ Returns:
 
 		pOld += InstrLen;
 		IsRIPRelative = FALSE;
+		a16 = FALSE;
 	}
 
 	*OutRelocSize = (ULONG)(pRes - Buffer);
