@@ -74,7 +74,7 @@ LONG DbgRelocateRIPRelative(
 	        ULONGLONG InTargetOffset,
             BOOL* OutWasRelocated);
 
-LONG RhSetWakeUpThreadID(ULONG InThreadID);
+EASYHOOK_NT_INTERNAL RhSetWakeUpThreadID(ULONG InThreadID);
 
 
 extern HMODULE             hNtDll;

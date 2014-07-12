@@ -263,15 +263,19 @@ Global
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Debug|Win32.ActiveCfg = netfx3.5-Debug|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Debug|Win32.Build.0 = netfx3.5-Debug|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Debug|x64.ActiveCfg = netfx3.5-Debug|Any CPU
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Debug|x64.Build.0 = netfx3.5-Debug|Any CPU
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Release|Win32.ActiveCfg = netfx3.5-Release|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Release|Win32.Build.0 = netfx3.5-Release|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Release|x64.ActiveCfg = netfx3.5-Release|Any CPU
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Release|x64.Build.0 = netfx3.5-Release|Any CPU
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Debug|Win32.ActiveCfg = netfx4-Debug|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Debug|Win32.Build.0 = netfx4-Debug|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Debug|x64.ActiveCfg = netfx4-Debug|Any CPU
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Debug|x64.Build.0 = netfx4-Debug|Any CPU
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Release|Win32.ActiveCfg = netfx4-Release|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Release|Win32.Build.0 = netfx4-Release|x86
 		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Release|x64.ActiveCfg = netfx4-Release|Any CPU
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Release|x64.Build.0 = netfx4-Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
