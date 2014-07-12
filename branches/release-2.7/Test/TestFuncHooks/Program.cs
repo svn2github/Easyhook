@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace TestFuncHooks
 {
@@ -202,7 +201,7 @@ namespace TestFuncHooks
                         results = new TEST_FUNC_HOOKS_RESULT[resultCount];
                         for (var i = 0; i < resultCount; i++)
                         {
-                            results[i] = (TEST_FUNC_HOOKS_RESULT)Marshal.PtrToStructure(resultsPtr + i * Marshal.SizeOf(typeof(TEST_FUNC_HOOKS_RESULT)), typeof(TEST_FUNC_HOOKS_RESULT));
+                            results[i] = (TEST_FUNC_HOOKS_RESULT)Marshal.PtrToStructure(new IntPtr(resultsPtr.ToInt64() + i * Marshal.SizeOf(typeof(TEST_FUNC_HOOKS_RESULT))), typeof(TEST_FUNC_HOOKS_RESULT));
                         }
 
                         NativeAPI_Pub_x64.ReleaseTestFuncHookResults(resultsPtr, resultCount);
@@ -231,7 +230,7 @@ namespace TestFuncHooks
                         results = new TEST_FUNC_HOOKS_RESULT[resultCount];
                         for (var i = 0; i < resultCount; i++)
                         {
-                            results[i] = (TEST_FUNC_HOOKS_RESULT)Marshal.PtrToStructure(resultsPtr + i * Marshal.SizeOf(typeof(TEST_FUNC_HOOKS_RESULT)), typeof(TEST_FUNC_HOOKS_RESULT));
+                            results[i] = (TEST_FUNC_HOOKS_RESULT)Marshal.PtrToStructure(new IntPtr(resultsPtr.ToInt32() + i * Marshal.SizeOf(typeof(TEST_FUNC_HOOKS_RESULT))), typeof(TEST_FUNC_HOOKS_RESULT));
                         }
 
                         NativeAPI_Pub_x86.ReleaseTestFuncHookResults(resultsPtr, resultCount);
