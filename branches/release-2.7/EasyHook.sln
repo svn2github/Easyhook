@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{35DFE11F-B359-4F35-AB32-19173B9EC94D}"
 	ProjectSection(SolutionItems) = preProject
 		KNOWN ISSUES.txt = KNOWN ISSUES.txt
@@ -37,6 +37,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComplexParameterInject", "Test\ComplexParameterInject\ComplexParameterInject.csproj", "{86354361-2016-4CB7-81B0-A980A1480791}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyLoad", "EasyLoad\EasyLoad.csproj", "{A563904A-09F4-40AB-AE16-9EC9B488EAE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestFuncHooks", "Test\TestFuncHooks\TestFuncHooks.csproj", "{DE6016B0-780A-4003-879A-9A25B4E09FF0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -258,6 +260,18 @@ Global
 		{A563904A-09F4-40AB-AE16-9EC9B488EAE5}.netfx4-Release|Win32.Build.0 = netfx4-Release|x86
 		{A563904A-09F4-40AB-AE16-9EC9B488EAE5}.netfx4-Release|x64.ActiveCfg = netfx4-Release|x64
 		{A563904A-09F4-40AB-AE16-9EC9B488EAE5}.netfx4-Release|x64.Build.0 = netfx4-Release|x64
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Debug|Win32.ActiveCfg = netfx3.5-Debug|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Debug|Win32.Build.0 = netfx3.5-Debug|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Debug|x64.ActiveCfg = netfx3.5-Debug|Any CPU
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Release|Win32.ActiveCfg = netfx3.5-Release|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Release|Win32.Build.0 = netfx3.5-Release|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx3.5-Release|x64.ActiveCfg = netfx3.5-Release|Any CPU
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Debug|Win32.ActiveCfg = netfx4-Debug|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Debug|Win32.Build.0 = netfx4-Debug|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Debug|x64.ActiveCfg = netfx4-Debug|Any CPU
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Release|Win32.ActiveCfg = netfx4-Release|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Release|Win32.Build.0 = netfx4-Release|x86
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0}.netfx4-Release|x64.ActiveCfg = netfx4-Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -272,5 +286,6 @@ Global
 		{B02AB185-2D23-4903-9246-F32951F726D2} = {9AA72FC5-310D-4EE3-8CB3-12167230C8D1}
 		{E23BE1E6-DC9D-4755-890E-443EA7B736FB} = {9AA72FC5-310D-4EE3-8CB3-12167230C8D1}
 		{86354361-2016-4CB7-81B0-A980A1480791} = {9AA72FC5-310D-4EE3-8CB3-12167230C8D1}
+		{DE6016B0-780A-4003-879A-9A25B4E09FF0} = {9AA72FC5-310D-4EE3-8CB3-12167230C8D1}
 	EndGlobalSection
 EndGlobal

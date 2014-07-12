@@ -29,14 +29,20 @@ extern "C"{
 
 #include "stdafx.h"
 
-#ifndef DRIVER
-	#define ASSERT(expr, Msg)            RtlAssert((BOOL)(expr),(LPCWSTR) Msg);
-	#define THROW(code, Msg)        { NtStatus = (code); RtlSetLastError(GetLastError(), Msg); goto THROW_OUTRO; }
+#if _DEBUG
+    #define DEBUG(message) { WCHAR debugMsg[1024] = { 0 }; _snwprintf_s(debugMsg, 1024, _TRUNCATE, L"%s\n", message); OutputDebugStringW(debugMsg); }
 #else
-	#define THROW(code, Msg)        { NtStatus = (code); RtlSetLastError(NtStatus, Msg); goto THROW_OUTRO; }
+    #define DEBUG(message) { }
 #endif
 
-#define RETURN                      { RtlSetLastError(STATUS_SUCCESS, L""); NtStatus = STATUS_SUCCESS; goto FINALLY_OUTRO; }
+#ifndef DRIVER
+	#define ASSERT(expr, Msg)            RtlAssert((BOOL)(expr),(LPCWSTR) Msg);
+	#define THROW(code, Msg)        { NtStatus = (code); RtlSetLastError(GetLastError(), NtStatus, Msg); goto THROW_OUTRO; }
+#else
+	#define THROW(code, Msg)        { NtStatus = (code); RtlSetLastError(NtStatus, NtStatus, Msg); goto THROW_OUTRO; }
+#endif
+
+#define RETURN                      { RtlSetLastError(STATUS_SUCCESS, STATUS_SUCCESS, L""); NtStatus = STATUS_SUCCESS; goto FINALLY_OUTRO; }
 #define FORCE(expr)                 { if(!RTL_SUCCESS(NtStatus = (expr))) goto THROW_OUTRO; }
 #define IsValidPointer				RtlIsValidPointer
 
@@ -102,6 +108,7 @@ LONG RtlProtectMemory(
 
 void RtlSetLastError(
             LONG InCode, 
+            LONG InNtStatus,
             WCHAR* InMessage);
 
 BOOL RtlAnsiHexToLongLong(

@@ -930,6 +930,11 @@ Example:
 
         OrdinalValue = AddressOfOrdinals[i];
 
+        if (OrdinalValue >= EATDirectory.NumberOfNames)
+        {
+            return NULL;
+        }
+
 		// If ordinal doesn't match index retrieve correct address
         if(OrdinalValue != i) {
             dwAddressOfRedirectedFunction	= ((DWORD_PTR)hRemote + (DWORD_PTR)AddressOfFunctions[OrdinalValue]);
@@ -1399,3 +1404,485 @@ ULONG GetInjectionSize()
     return 0;
 }
 
+
+
+
+
+
+
+
+EASYHOOK_NT_EXPORT TestFuncHooks(ULONG pId, 
+        PCHAR module,
+        TEST_FUNC_HOOKS_OPTIONS options,
+        TEST_FUNC_HOOKS_RESULT** outResults,
+        int* resultCount)
+{
+/*
+Description:
+
+    Tests whether it is possible to hook DLL exports found within the specified module.
+
+Parameters:
+
+    - pId
+
+        The process Id to test.
+    
+    - module
+
+        The name of the module to look for exports within.
+
+    - options
+
+        Optionally specifies whether to output the results to a text file, or
+        the name of a single export to test.
+
+    - outResults
+
+        Returns the array of results. This should be freed by a subsequent 
+        call to ReleaseTestFuncHookResults.
+
+    - resultCount
+
+        The number of items added to outResults.
+
+Returns:
+
+    NTSTATUS
+
+*/
+    FILE *f = NULL;
+    HANDLE hProcess;
+
+    HMODULE hRemote = GetRemoteModuleHandle(pId, module);
+    IMAGE_DOS_HEADER DosHeader;
+    IMAGE_NT_HEADERS NtHeaders;
+	IMAGE_EXPORT_DIRECTORY EATDirectory;
+
+    DWORD*    AddressOfFunctions;
+	DWORD*    AddressOfNames;
+	WORD*    AddressOfOrdinals;
+
+	unsigned int i;
+
+	DWORD_PTR dwExportBase;
+	DWORD_PTR dwExportSize;
+	DWORD_PTR dwAddressOfFunction;
+	DWORD_PTR dwAddressOfName;
+
+	char pszFunctionName[256] = { 0 };
+	char pszRedirectName[256] = { 0 };
+	char pszModuleName[256] = { 0 };
+    char pszFunctionRedi[256] = { 0 };
+
+    int a = 0;
+	int b = 0;
+
+	WORD OrdinalValue;
+
+	DWORD_PTR dwAddressOfRedirectedFunction;
+	DWORD_PTR dwAddressOfRedirectedName;
+
+    ULONG asmLength;
+    ULONG64 nextInstr;
+    CHAR buf[MAX_PATH];
+
+    NTSTATUS NtStatus;
+    CHAR asmBuf[MAX_PATH];
+    unsigned char *opcodes;
+    ULONG entryPointSize = 0;
+    UCHAR entryPoint[ 256 ] = { 0 };
+    DWORD_PTR pEntryPoint = NULL;
+    LOCAL_HOOK_INFO* hookBuf = NULL;
+    ULONG relocBufSize = 0;
+
+    CHAR outputBuf[1024] = { 0 };
+
+    TEST_FUNC_HOOKS_RESULT* results = NULL;
+    TEST_FUNC_HOOKS_RESULT* result;
+    int count = 0;
+
+	char pszRedirectedFunctionName[ 256 ] = { 0 };
+
+    // Initialise results
+    *resultCount = 0;
+    *outResults = NULL;
+
+    // open target process
+    if((hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pId)) == NULL)
+	{
+		if(GetLastError() == ERROR_ACCESS_DENIED)
+            return STATUS_ACCESS_DENIED;
+		else
+			return STATUS_NOT_FOUND;
+	}
+
+	if(!hRemote)
+        return STATUS_NOT_FOUND;
+    
+	// Load DOS PE header
+    if(!ReadProcessMemory(hProcess, (void*)hRemote, &DosHeader, sizeof(IMAGE_DOS_HEADER), NULL) || DosHeader.e_magic != IMAGE_DOS_SIGNATURE)
+        return STATUS_NOT_FOUND;
+
+	// Load NT PE headers
+    if(!ReadProcessMemory(hProcess, (void *)((DWORD_PTR)hRemote + DosHeader.e_lfanew), &NtHeaders, sizeof(IMAGE_NT_HEADERS), NULL) || NtHeaders.Signature != IMAGE_NT_SIGNATURE)
+        return STATUS_NOT_FOUND;
+
+    // Load image export directory
+    if(!GetRemoteModuleExportDirectory(hProcess, hRemote, &EATDirectory, DosHeader, NtHeaders))
+        return STATUS_NOT_FOUND;
+
+	// Allocate room for all the function information
+    AddressOfFunctions	= (DWORD*)malloc(EATDirectory.NumberOfFunctions * sizeof(DWORD));
+    AddressOfNames      = (DWORD*)malloc(EATDirectory.NumberOfNames * sizeof(DWORD));
+    AddressOfOrdinals   = (WORD*)malloc(EATDirectory.NumberOfNames * sizeof(WORD));
+
+	// Read function address locations
+    if(!ReadProcessMemory(hProcess, (void*)((DWORD_PTR)hRemote + (DWORD_PTR)EATDirectory.AddressOfFunctions), AddressOfFunctions, EATDirectory.NumberOfFunctions * sizeof(DWORD), NULL)) {
+        free(AddressOfFunctions);
+        free(AddressOfNames);
+        free(AddressOfOrdinals);
+        return STATUS_NOT_FOUND;
+    }
+
+	// Read function name locations
+    if(!ReadProcessMemory(hProcess, (void*)((DWORD_PTR)hRemote + (DWORD_PTR)EATDirectory.AddressOfNames), AddressOfNames, EATDirectory.NumberOfNames * sizeof(DWORD), NULL)) {
+        free(AddressOfFunctions);
+        free(AddressOfNames);
+        free(AddressOfOrdinals);
+        return STATUS_NOT_FOUND;
+    }
+
+	// Read function name ordinal locations
+    if(!ReadProcessMemory(hProcess, (void*)((DWORD_PTR)hRemote + (DWORD_PTR)EATDirectory.AddressOfNameOrdinals), AddressOfOrdinals, EATDirectory.NumberOfNames * sizeof(WORD), NULL)) {
+        free(AddressOfFunctions);
+        free(AddressOfNames);
+        free(AddressOfOrdinals);
+        return STATUS_NOT_FOUND;
+    }
+
+    dwExportBase = ((DWORD_PTR)hRemote + NtHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+    dwExportSize = (dwExportBase + NtHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size);
+
+    // Determine result count
+    for(i = 0; i < EATDirectory.NumberOfNames; ++i) {
+        dwAddressOfFunction    = (DWORD_PTR)hRemote + AddressOfFunctions[i];
+        dwAddressOfName        = (DWORD_PTR)hRemote + AddressOfNames[i];
+
+		memset(&pszFunctionName, 0, 256);
+
+        if(!ReadProcessMemory(hProcess, (void*)dwAddressOfName, pszFunctionName, 256, NULL))
+            continue;
+
+        // Skip until we find the matching function name
+        if (options.FilterByName != NULL && strlen(options.FilterByName) > 0)
+        {
+            if (_stricmp(pszFunctionName, options.FilterByName) == 0)
+                count++;
+        }
+        else 
+        {
+            count++;
+        }
+    }
+
+    // Allocate memory for the results
+    *resultCount = count;
+    results = (TEST_FUNC_HOOKS_RESULT *)CoTaskMemAlloc(count * sizeof(TEST_FUNC_HOOKS_RESULT));
+    *outResults = results;
+
+    if (results == NULL)
+    {
+        *outResults = NULL;
+        *resultCount = 0;
+        return STATUS_NO_MEMORY;
+    }
+
+    memset(results, 0, count * sizeof(TEST_FUNC_HOOKS_RESULT));
+
+    for (a = 0; a < count; a++) {
+        result = &results[a];
+        result->FnName = (LPSTR)CoTaskMemAlloc(MAX_PATH);
+        memset(result->FnName, 0, MAX_PATH);
+
+        result->ModuleRedirect = (LPSTR)CoTaskMemAlloc(MAX_PATH);
+        memset(result->ModuleRedirect, 0, MAX_PATH);
+
+        result->FnRedirect = (LPSTR)CoTaskMemAlloc(MAX_PATH);
+        memset(result->FnRedirect, 0, MAX_PATH);
+
+        result->EntryDisasm = (LPSTR)CoTaskMemAlloc(1024);
+        memset(result->EntryDisasm, 0, 1024);
+
+        result->RelocDisasm = (LPSTR)CoTaskMemAlloc(1024);
+        memset(result->RelocDisasm, 0, 1024);
+
+        result->Error = (LPSTR)CoTaskMemAlloc(1024);
+        memset(result->Error, 0, 1024);
+    }
+
+
+    count = a = b = 0;
+
+	// Check each name for a match
+    for(i = 0; i < EATDirectory.NumberOfNames; ++i) {
+        dwAddressOfFunction    = (DWORD_PTR)hRemote + AddressOfFunctions[i];
+        dwAddressOfName        = (DWORD_PTR)hRemote + AddressOfNames[i];
+
+		memset(&pszFunctionName, 0, 256);
+        
+        if(!ReadProcessMemory(hProcess, (void*)dwAddressOfName, pszFunctionName, 256, NULL))
+            continue;
+
+        memset(&outputBuf, 0, 1024);
+
+        // Skip until we find the matching function name
+        if (options.FilterByName != NULL && strlen(options.FilterByName) > 0 && (_stricmp(pszFunctionName, options.FilterByName) != 0))
+            continue;
+
+        // Get next result obj
+        result = &results[count++];
+        
+        strcpy_s(result->FnName, MAX_PATH, pszFunctionName);
+        
+        // Check if address of function is found in another module
+        if(dwAddressOfFunction >= dwExportBase && dwAddressOfFunction <= dwExportSize) {
+            memset(&pszRedirectName, 0, 256);
+
+            if(!ReadProcessMemory(hProcess, (void*)dwAddressOfFunction, pszRedirectName, 256, NULL))
+                continue;
+
+            memset(&pszModuleName, 0, 256);
+			memset(&pszFunctionRedi, 0, 256);
+
+            a = 0;
+            for(; pszRedirectName[a] != '.'; a++)
+                pszModuleName[a] = pszRedirectName[a];
+            a++;
+            pszModuleName[a] = '\0';
+
+            b = 0;
+            for(; pszRedirectName[a] != '\0'; a++, b++)
+                pszFunctionRedi[b] = pszRedirectName[a];
+            b++;
+            pszFunctionRedi[b] = '\0';
+
+            strcat_s(pszModuleName, 256, ".dll");
+            strcpy_s(result->ModuleRedirect, MAX_PATH, pszModuleName);
+
+            dwAddressOfFunction = (DWORD_PTR)GetRemoteFuncAddress(pId, hProcess, pszModuleName, pszFunctionRedi);
+            if (dwAddressOfFunction == 0) {
+                strcpy_s(result->Error, 1024, "DLL redirect unreadable");
+                continue;
+            }
+            else {
+                strcpy_s(result->FnRedirect, MAX_PATH, pszFunctionRedi);
+            }
+        }
+        else {
+            OrdinalValue = AddressOfOrdinals[i];
+
+            if (OrdinalValue >= EATDirectory.NumberOfNames)
+            {
+                    strcpy_s(result->Error, 1024, "Ordinal redirect out of range");
+                    continue;
+            }
+
+		    // If ordinal doesn't match index retrieve correct address
+            if(OrdinalValue != i) {
+                dwAddressOfRedirectedFunction	= ((DWORD_PTR)hRemote + (DWORD_PTR)AddressOfFunctions[OrdinalValue]);
+                dwAddressOfRedirectedName		= ((DWORD_PTR)hRemote + (DWORD_PTR)AddressOfNames[OrdinalValue]);
+
+                memset(&pszRedirectedFunctionName, 0, 256);
+
+                if(!ReadProcessMemory(hProcess, (void*)dwAddressOfRedirectedName, pszRedirectedFunctionName, 256, NULL))
+                {
+                    
+                    strcpy(result->Error, "Ordinal redirect unreadable");
+                    continue;
+                }
+                else
+                {
+                    strcpy_s(result->FnRedirect, MAX_PATH, pszRedirectedFunctionName);
+                    dwAddressOfFunction = dwAddressOfRedirectedFunction;
+                }
+            }
+        }
+        result->FnAddress = (void*)dwAddressOfFunction;
+        
+        entryPointSize = 0;
+
+        a = 0;
+        
+        // 1. Allocate memory and prepare the hook
+        if (!RTL_SUCCESS(LhAllocateHook((void*)dwAddressOfFunction, (void*)dwAddressOfFunction, NULL, &hookBuf, &relocBufSize)))
+        {
+            // Unable to allocate hook or unable to relocate instructions
+            BOOL usedDefault = FALSE;
+            WideCharToMultiByte(CP_ACP,
+                                WC_COMPOSITECHECK | WC_DEFAULTCHAR,
+                                RtlGetLastErrorString(),
+                                lstrlenW(RtlGetLastErrorString()),
+                                outputBuf,
+                                1024,
+                                "?",
+                                &usedDefault);
+            sprintf_s(result->Error, 1024, "Unable to allocate hook: %s", outputBuf);
+            memset(&asmBuf, 0, MAX_PATH);
+            pEntryPoint = dwAddressOfFunction;
+            // Disassemble instructions
+            while ((a < 2 || (pEntryPoint - dwAddressOfFunction < 5)) && RTL_SUCCESS(LhDisassembleInstruction((void*)pEntryPoint, &asmLength, buf, MAX_PATH, &nextInstr)))
+            {
+                opcodes = (unsigned char *)pEntryPoint;
+                sprintf(asmBuf, "\t");
+                for (b = 0; b < (int)(nextInstr - pEntryPoint); b++)
+                {
+                    entryPoint[entryPointSize + b] = *opcodes;
+                
+                    sprintf(asmBuf + strlen(asmBuf), "%02X ", *opcodes);
+                    opcodes++;
+                }
+
+                sprintf_s(result->EntryDisasm + strlen(result->EntryDisasm), 1024 - strlen(result->EntryDisasm), "%-35s%-30sIP:%x\n", asmBuf, buf, nextInstr);
+                a++;
+
+                pEntryPoint = nextInstr;
+            }
+            
+            continue;
+        }
+        entryPointSize = hookBuf->EntrySize;
+
+        // 2. Disassemble entry point and relocated buffer
+        if (entryPointSize == 0)
+            strcpy(result->Error, "Entry point size is Zero");
+        else if (entryPointSize >= 20)
+            sprintf(result->Error, "Entry point is too large: %d", entryPointSize);
+        else
+        {
+            pEntryPoint = dwAddressOfFunction;
+            memset(asmBuf, 0, MAX_PATH);
+            while ((pEntryPoint - (DWORD_PTR)dwAddressOfFunction < entryPointSize) && RTL_SUCCESS(LhDisassembleInstruction((void*)pEntryPoint, &asmLength, buf, MAX_PATH, &nextInstr)))
+            {
+                opcodes = (PUCHAR)pEntryPoint;
+                sprintf(asmBuf, "\t");
+                for (b = 0; b < (int)(nextInstr - pEntryPoint); b++)
+                {
+                    sprintf(asmBuf + strlen(asmBuf), "%02X ", *opcodes);
+                    opcodes++;
+                }
+                sprintf_s(result->EntryDisasm + strlen(result->EntryDisasm), 1024 - strlen(result->EntryDisasm), "%-35s%-30sIP:%x\n", asmBuf, buf, nextInstr);
+                pEntryPoint = nextInstr;
+            }
+            pEntryPoint = (DWORD_PTR)hookBuf->OldProc;
+            result->RelocAddress = (void*)pEntryPoint;
+            memset(asmBuf, 0, MAX_PATH);
+            while ((pEntryPoint - (DWORD_PTR)hookBuf->OldProc < relocBufSize) && RTL_SUCCESS(LhDisassembleInstruction((void*)pEntryPoint, &asmLength, buf, MAX_PATH, &nextInstr)))
+            {
+                opcodes = (PUCHAR)pEntryPoint;
+                sprintf(asmBuf, "\t");
+                for (b = 0; b < (int)(nextInstr - pEntryPoint); b++)
+                {
+                    sprintf(asmBuf + strlen(asmBuf), "%02X ", *opcodes);
+                    opcodes++;
+                }
+                sprintf_s(result->RelocDisasm + strlen(result->RelocDisasm), 1024 - strlen(result->RelocDisasm), "%-35s%-30sIP:%x\n", asmBuf, buf, nextInstr);
+                pEntryPoint = nextInstr;
+            }
+        }
+        
+        if (hookBuf != NULL)
+            LhFreeMemory(&hookBuf);
+        hookBuf = NULL;
+    }
+
+    // Write to file
+        
+    if (options.Filename != NULL && strlen(options.Filename) > 0)
+    {
+        f = fopen(options.Filename, "w");
+        if (f == NULL)
+        {
+            printf("Error opening file!\n");
+            return STATUS_NOT_FOUND;
+        }
+
+        for (i = 0; i < count; i++)
+        {
+            result = &results[i];
+
+            fprintf(f, "\nFunction: %s\n", result->FnName);
+            
+            if (result->ModuleRedirect != NULL && strlen(result->ModuleRedirect))
+                fprintf(f, "\t(redirected to DLL: %s!%s)\n", result->ModuleRedirect, result->FnRedirect);
+            if (result->FnRedirect != NULL && strlen(result->FnRedirect))
+                fprintf(f, "\t(redirected to function: %s)\n", result->FnRedirect);
+
+            if (result->Error != NULL && strlen(result->Error) > 0)
+            {
+                fprintf(f, "ERROR: %s\n", result->Error);
+
+                if (result->EntryDisasm != NULL && strlen(result->EntryDisasm) > 0) {
+                    fprintf(f, "%s", result->EntryDisasm);
+                }
+            }
+            else
+            {
+                fprintf(f, "Entry point:@ %x\n", result->FnAddress);
+                fprintf(f, "%s", result->EntryDisasm);
+                fprintf(f, "Relocated entry point:@ %x\n", result->RelocAddress);
+                fprintf(f, "%s", result->RelocDisasm);
+            }
+        }
+
+        fclose(f);
+    }
+
+    free(AddressOfFunctions);
+    free(AddressOfNames);
+    free(AddressOfOrdinals);
+    
+    return 0;
+}
+
+
+EASYHOOK_NT_EXPORT ReleaseTestFuncHookResults(TEST_FUNC_HOOKS_RESULT* results, int count)
+{
+/*
+Description:
+
+    Free the memory allocated for the results from a previous call to TestFuncHooks.
+
+Parameters:
+
+    - results
+
+        Pointer to array of TEST_FUNC_HOOKS_RESULT to be freed.
+    
+    - count
+
+        The number of elements within results.
+
+Returns:
+
+    STATUS_SUCCESS
+
+*/
+    int i = 0;
+    TEST_FUNC_HOOKS_RESULT* result;
+    for (i = 0; i < count; i++)
+    {
+        result = &results[i];
+
+        CoTaskMemFree(result->FnName);
+        CoTaskMemFree(result->ModuleRedirect);
+        CoTaskMemFree(result->FnRedirect);
+        CoTaskMemFree(result->EntryDisasm);
+        CoTaskMemFree(result->RelocDisasm);
+        CoTaskMemFree(result->Error);
+    }
+
+    CoTaskMemFree(results);
+
+    return STATUS_SUCCESS;
+}
