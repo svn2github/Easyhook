@@ -86,6 +86,7 @@ typedef struct _LOCAL_HOOK_INFO_
 extern LOCAL_HOOK_INFO          GlobalHookListHead;
 extern LOCAL_HOOK_INFO          GlobalRemovalListHead;
 extern RTL_SPIN_LOCK            GlobalHookLock;
+extern ULONG                    GlobalSlotList[];
 
 EASYHOOK_BOOL_INTERNAL LhIsValidHandle(
             TRACED_HOOK_HANDLE InTracedHandle,

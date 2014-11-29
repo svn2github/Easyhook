@@ -839,7 +839,11 @@ namespace EasyHook
             return (TDelegate)(Object)Marshal.GetDelegateForFunctionPointer(GetProcAddress(InModule, InSymbolName), typeof(TDelegate));
         }
 
-        internal static void Release()
+        /// <summary>
+        /// Processes any pending hook removals. Warning! This method can be quite slow (1 second) under certain circumstances.
+        /// </summary>
+        /// <see cref="NativeAPI.LhWaitForPendingRemovals()"/>
+        public static void Release()
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();

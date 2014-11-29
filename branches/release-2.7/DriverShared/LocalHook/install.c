@@ -29,7 +29,7 @@ ULONG GetTrampolineSize();
 LOCAL_HOOK_INFO             GlobalHookListHead;
 LOCAL_HOOK_INFO             GlobalRemovalListHead;
 RTL_SPIN_LOCK               GlobalHookLock;
-static ULONG                GlobalSlotList[MAX_HOOK_COUNT];
+ULONG                       GlobalSlotList[MAX_HOOK_COUNT];
 static LONG                 UniqueIDCounter = 0x10000000;
 
 void LhCriticalInitialize()

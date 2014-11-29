@@ -200,6 +200,12 @@ Descriptions:
             {
                 if (*Hook->IsExecutedPtr <= 0)
                 {
+                    // release slot
+                    if (GlobalSlotList[Hook->HLSIndex] == Hook->HLSIdent)
+                    {
+                        GlobalSlotList[Hook->HLSIndex] = 0;
+                    }
+
                     // release memory...
                     LhFreeMemory(&Hook);
                     break;
