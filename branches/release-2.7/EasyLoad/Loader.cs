@@ -60,41 +60,50 @@ namespace EasyLoad
         [DllExport("Load", System.Runtime.InteropServices.CallingConvention.StdCall)]
         public static int Load([MarshalAs(UnmanagedType.LPWStr)]String inParam)
         {
-            lock (_lock)
+            try
             {
-                try
+                lock (_lock)
                 {
+
                     if (_easyHookDomain == null)
                     {
+                        System.Security.PermissionSet ps = new System.Security.PermissionSet(System.Security.Permissions.PermissionState.Unrestricted);
+                        ps.AddPermission(new System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityPermissionFlag.AllFlags));
                         // Evidence of null means use the current appdomain evidence
                         _easyHookDomain = AppDomain.CreateDomain("EasyHook", null, new AppDomainSetup()
                         {
                             ApplicationBase = Path.GetDirectoryName(typeof(Loader).Assembly.Location),
                             // ShadowCopyFiles = "true", // copies assemblies from ApplicationBase into cache, leaving originals unlocked and updatable
-                        });
-                    }
-
-                    // Load the EasyHook assembly in the child AppDomain by using the proxy class
-                    Type proxyType = typeof(LoadEasyHookProxy);
-                    if (proxyType.Assembly != null)
-                    {
-                        // This is where the currentDomain.AssemblyResolve that we setup within the static 
-                        // constructor is required.
-                        var proxy = (LoadEasyHookProxy)_easyHookDomain.CreateInstanceFrom(
-                                        proxyType.Assembly.Location,
-                                        proxyType.FullName).Unwrap();
-
-                        // Loads EasyHook.dll into the AppDomain, which in turn loads the target assembly
-                        return proxy.Load(inParam);
+                        }, ps);
                     }
                 }
-                catch (Exception)
+
+                int result = -1;
+
+                // Load the EasyHook assembly in the child AppDomain by using the proxy class
+                Type proxyType = typeof(LoadEasyHookProxy);
+                if (proxyType.Assembly != null)
                 {
+                    // This is where the currentDomain.AssemblyResolve that we setup within the static 
+                    // constructor is required.
+                    var proxy = (LoadEasyHookProxy)_easyHookDomain.CreateInstanceFrom(
+                                    proxyType.Assembly.Location,
+                                    proxyType.FullName).Unwrap();
+
+                    // Loads EasyHook.dll into the AppDomain, which in turn loads the target assembly
+                    result = proxy.Load(inParam);
                 }
 
-                // Failed
-                return -1;
+                //result = new LoadEasyHookProxy().Load(inParam);
+
+                return result;
             }
+            catch (Exception)
+            {
+            }
+
+            // Failed
+            return -1;
         }
 
         /// <summary>
