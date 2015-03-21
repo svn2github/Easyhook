@@ -14,9 +14,9 @@ namespace SimpleHook1
 
         public void Run(RemoteHooking.IContext InContext)
         {
-            while (true)
+            //while (true)
             {
-
+                System.Threading.Thread.Sleep(30000);
             }
         }
     }

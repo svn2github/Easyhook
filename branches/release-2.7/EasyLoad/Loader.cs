@@ -30,6 +30,11 @@ namespace EasyLoad
     {
         static object _lock = new object();
         static AppDomain _easyHookDomain;
+        /// <summary>
+        /// Keep track of injections to determine when it is safe to unload the AppDomain
+        /// </summary>
+        static int _injectCount = 0;
+
         static Loader()
         {
             // Custom AssemblyResolve is necessary to load assembly from same directory as EasyLoad
@@ -64,7 +69,7 @@ namespace EasyLoad
             {
                 lock (_lock)
                 {
-
+                    _injectCount++;
                     if (_easyHookDomain == null)
                     {
                         System.Security.PermissionSet ps = new System.Security.PermissionSet(System.Security.Permissions.PermissionState.Unrestricted);
@@ -95,11 +100,18 @@ namespace EasyLoad
                 }
 
                 //result = new LoadEasyHookProxy().Load(inParam);
-
                 return result;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                System.Diagnostics.Debug.WriteLine("Exception occured within Loader.Load: " + e.ToString());
+            }
+            finally
+            {
+                lock (_lock)
+                {
+                    _injectCount--;
+                }
             }
 
             // Failed
@@ -114,7 +126,7 @@ namespace EasyLoad
         {
             lock (_lock)
             {
-                if (_easyHookDomain != null)
+                if (_easyHookDomain != null && _injectCount == 0)
                 {
                     try
                     {
@@ -140,8 +152,8 @@ namespace EasyLoad
                             break;
                         }
                     }
+                    _easyHookDomain = null;
                 }
-                _easyHookDomain = null;
             }
         }
     }
