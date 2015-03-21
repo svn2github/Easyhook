@@ -20,12 +20,13 @@
     Please visit http://www.codeplex.com/easyhook for more information
     about the project and latest updates.
 */
+#if _DEBUG
+#include <tchar.h>
+#include <atltrace.h>
+#endif
 #include "stdafx.h"
 #include <mscoree.h>
 #include <metahost.h>
-#if _DEBUG
-#include <atltrace.h>
-#endif
 
 // prevent static NET binding...
 typedef HRESULT __stdcall PROC_CorBindToRuntime(
