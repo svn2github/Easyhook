@@ -570,8 +570,6 @@ namespace EasyHook
             /*
                 validate assembly name...
              */
-            Assembly UserAsm;
-
             InRemoteInfo.UserLibrary = InLibraryPath_x86;
 
             if (NativeAPI.Is64Bit)
@@ -582,10 +580,27 @@ namespace EasyHook
                 // translate to assembly name
                 InRemoteInfo.UserLibraryName = AssemblyName.GetAssemblyName(InRemoteInfo.UserLibrary).FullName;
             }
+            else
+            {
+                throw new FileNotFoundException(String.Format("The given assembly could not be found. {0}", InRemoteInfo.UserLibrary), InRemoteInfo.UserLibrary);
+            }
 
             // Attempt to load the library by its FullName and if that fails, by its original library filename
-            if ((UserAsm = Assembly.ReflectionOnlyLoad(InRemoteInfo.UserLibraryName)) == null && (UserAsm = Assembly.ReflectionOnlyLoadFrom(InRemoteInfo.UserLibrary)) == null)
-                throw new DllNotFoundException("The given assembly could not be found.");
+            Assembly UserAsm = null;
+            try
+            {
+                if (!String.IsNullOrEmpty(InRemoteInfo.UserLibraryName))
+                {
+                    UserAsm = Assembly.ReflectionOnlyLoad(InRemoteInfo.UserLibraryName);
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                // We already know the file exists at this point so try to load from original library filename instead
+                UserAsm = null;
+            }
+            if (UserAsm == null && (UserAsm = Assembly.ReflectionOnlyLoadFrom(InRemoteInfo.UserLibrary)) == null)
+                throw new DllNotFoundException(String.Format("The given assembly could not be found. {0}", InRemoteInfo.UserLibrary));
 
             // Check for a strong name if necessary
             if (InRemoteInfo.RequireStrongName && (Int32)(UserAsm.GetName().Flags & AssemblyNameFlags.PublicKey) == 0)
