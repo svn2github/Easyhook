@@ -165,6 +165,8 @@ Description:
         // NOTE: The first call to userLibLoad simply intialises the IPC channel
         //       used by EasyHook to confirm the injection. The target assembly
         //       is not loaded here, but within the second call.
+        __try
+        {
 		RtlLongLongToUnicodeHex((LONGLONG)&EntryInfo, ParamString);
         if(!RTL_SUCCESS(RetVal = userLibLoad(ParamString)))
 		{
@@ -186,6 +188,11 @@ Description:
         // If the library implements a clean-up method, call it
         if (userLibClose != NULL)
             userLibClose();
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            goto ABORT_ERROR;
+        }
 	}
     // Backup method of manually preparing the .NET environment
 	else // useLibLoad == NULL
